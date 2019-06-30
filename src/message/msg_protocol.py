@@ -32,6 +32,10 @@ class MsgProtocol(object):
         # Struct format for message header
         self.header_fmt = MsgProtocol.HEADER_FMT
 
+        self.unpack_fmt = MsgProtocol.NET_FMT   \
+            + MsgProtocol.MSG_TYPE_FMT      \
+            + self.var_data_fmt
+
         # Packing format with variable length data section
         self.pack_fmt = self.header_fmt + self.var_data_fmt
 
@@ -60,9 +64,7 @@ class MsgProtocol(object):
 
         :returns: Message object
         """
-        dynamic_fmt = MsgProtocol.NET_FMT   \
-            + MsgProtocol.MSG_TYPE_FMT      \
-            + self.var_data_fmt % (byte_len - 1)
+        dynamic_fmt = self.unpack_fmt % (byte_len - 1)
 
         msg_type, payload = struct.unpack(dynamic_fmt, byte_data)
 
