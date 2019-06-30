@@ -11,11 +11,11 @@ class Msg(object):
     sent between Endpoint applications.
     """
 
-    def __init__(self, msg_type):
+    def __init__(self, msg_type, payload):
         """
         """
-        self.payload = bytes()
         self.msg_type = msg_type
+        self.payload = payload
 
     def __len__(self):
         """
@@ -34,8 +34,8 @@ class ConnectionBroadcastMsg(Msg):
     def __init__(self, host_id):
         """
         """
-        super().__init__(MsgEnum.ENDPOINT_CONNECTION_BROADCAST)
-        # TODO: SET PAYLOAD
+        super().__init__(MsgEnum.ENDPOINT_CONNECTION_BROADCAST,
+                         host_id)
 
 
 class ConnectionResponseMsg(Msg):
@@ -46,8 +46,8 @@ class ConnectionResponseMsg(Msg):
     def __init__(self, remote_id):
         """
         """
-        super().__init__(MsgEnum.ENDPOINT_CONNECTION_RESPONSE)
-        # TODO: SET PAYLOAD
+        super().__init__(MsgEnum.ENDPOINT_CONNECTION_RESPONSE,
+                         remote_id)
 
 
 class DisconnectionBroadcastMsg(Msg):
@@ -58,8 +58,8 @@ class DisconnectionBroadcastMsg(Msg):
     def __init__(self, host_id):
         """
         """
-        super().__init__(MsgEnum.ENDPOINT_DISCONNECTED_BROADCAST)
-        # TODO: SET PAYLOAD
+        super().__init__(MsgEnum.ENDPOINT_DISCONNECTED_BROADCAST,
+                         host_id)
 
 
 class CommunicationMsg(Msg):
@@ -70,8 +70,8 @@ class CommunicationMsg(Msg):
     def __init__(self, data):
         """
         """
-        super().__init__(MsgEnum.ENDPOINT_COMMUNICATION)
-        # TODO: SET PAYLOAD
+        super().__init__(MsgEnum.ENDPOINT_COMMUNICATION,
+                         data)
 
 
 class AcknowledgementMsg(Msg):
@@ -82,4 +82,40 @@ class AcknowledgementMsg(Msg):
     def __init__(self):
         """
         """
-        super().__init__(MsgEnum.ENDPOINT_COMM_ACKNOWLEDGEMENT)
+        super().__init__(MsgEnum.ENDPOINT_COMM_ACKNOWLEDGEMENT,
+                         bytes())
+
+
+@staticmethod
+def construct(msg_type, payload):
+    """
+    Factory function for constructing a message of the appropriate
+    type with the correct formatting for the payload
+
+    :param msg_type: Enum representing message type
+    :param payload: Raw message payload as Bytes
+
+    :returns: Message object
+    :raises: AttributeError if msg_type enum not supported
+    """
+    if msg_type == MsgEnum.ENDPOINT_COMMUNICATION:
+        # TODO format payload
+        return CommunicationMsg(payload)
+
+    elif msg_type == MsgEnum.ENDPOINT_COMM_ACKNOWLEDGEMENT:
+        return AcknowledgementMsg()
+
+    elif msg_type == MsgEnum.ENDPOINT_CONNECTION_BROADCAST:
+        # TODO format payload
+        return ConnectionBroadcastMsg(payload)
+
+    elif msg_type == MsgEnum.ENDPOINT_CONNECTION_RESPONSE:
+        # TODO format payload
+        return ConnectionResponseMsg(payload)
+
+    elif msg_type == MsgEnum.ENDPOINT_DISCONNECTED_BROADCAST:
+        # TODO format payload
+        return DisconnectionBroadcastMsg(payload)
+
+    else:
+        raise AttributeError('%s message type not supported' % (msg_type.name))
