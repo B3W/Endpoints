@@ -26,27 +26,39 @@ class Msg(object):
         return len(self.payload)
 
 
-class DiscoverPollMsg(Msg):
+class ConnectionBroadcastMsg(Msg):
     """
-    Derived class specifying format for discovery message poll
+    Derived class specifying format for connection broadcast message
     """
 
-    def __init__(self, host_ip, host_port):
+    def __init__(self, host_id):
         """
         """
-        super().__init__(MsgEnum.DISCOVERY_POLL)
+        super().__init__(MsgEnum.ENDPOINT_CONNECTION_BROADCAST)
         # TODO: SET PAYLOAD
 
 
-class DiscoverRespMsg(Msg):
+class ConnectionResponseMsg(Msg):
     """
-    Derived class specifying format for discovery message response
+    Derived class specifying format for connection broadcast response message
     """
 
-    def __init__(self, remote_ip, remote_port):
+    def __init__(self, remote_id):
         """
         """
-        super().__init__(MsgEnum.DISCOVERY_RESP)
+        super().__init__(MsgEnum.ENDPOINT_CONNECTION_RESPONSE)
+        # TODO: SET PAYLOAD
+
+
+class DisconnectionBroadcastMsg(Msg):
+    """
+    Derived class specifying format for disconnection broadcast message
+    """
+
+    def __init__(self, host_id):
+        """
+        """
+        super().__init__(MsgEnum.ENDPOINT_DISCONNECTED_BROADCAST)
         # TODO: SET PAYLOAD
 
 
@@ -58,7 +70,7 @@ class CommunicationMsg(Msg):
     def __init__(self, data):
         """
         """
-        super().__init__(MsgEnum.COMMUNICATION)
+        super().__init__(MsgEnum.ENDPOINT_COMMUNICATION)
         # TODO: SET PAYLOAD
 
 
@@ -70,4 +82,4 @@ class AcknowledgementMsg(Msg):
     def __init__(self):
         """
         """
-        super().__init__(MsgEnum.ACK)
+        super().__init__(MsgEnum.ENDPOINT_COMM_ACKNOWLEDGEMENT)
