@@ -2,70 +2,79 @@
 Module defining the protocol for sending and receiving
 data between Endpoint applications.
 """
-import msg
+from msg import Msg, MsgType
 import struct
 
 
-class MsgProtocol(object):
+NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
+LEN_PREF_FMT = 'H'  # Length-prefix formatting
+MSG_TYPE_FMT = 'B'  # Msg type flag formatting
+# TODO: Add checksum into the header
+HEADER_FMT = NET_FMT + LEN_PREF_FMT + MSG_TYPE_FMT  # Msg 'header' format
+
+LEN_PREF_SZ_BYTES \
+    = struct.calcsize(LEN_PREF_FMT)  # Bytes alloted for length prefix
+HEADER_SZ_BYTES   \
+    = struct.calcsize(HEADER_FMT)    # Size of msg 'header'
+
+variable_data_fmt = '%ds'  # Format for variable message data
+pack_fmt = HEADER_FMT + variable_data_fmt  # Packing format
+unpack_fmt = HEADER_FMT + variable_data_fmt  # Unpacking format
+
+
+def serialize(message):
     """
-    Class for serializing and deserializing data via
-    length-prefixed message framing
+    Serializes message for sending over wire
+
+    :param message: message to send
+
+    :returns: Bytes object representing message to send
     """
+    dynamic_fmt = pack_fmt % (len(message))
+    msg_sz = struct.calcsize(dynamic_fmt)
 
-    NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
-    LEN_PREF_FMT = 'H'  # Length-prefix formatting
-    MSG_TYPE_FMT = 'B'  # Msg type flag formatting
-    HEADER_FMT = NET_FMT + LEN_PREF_FMT + MSG_TYPE_FMT  # Msg 'header' format
+    return struct.pack(dynamic_fmt,
+                       msg_sz,
+                       message.msg_type.value,
+                       message.payload)
 
-    LEN_PREF_SZ_BYTES \
-        = struct.calcsize(LEN_PREF_FMT)  # Bytes alloted for length prefix
-    HEADER_SZ_BYTES   \
-        = struct.calcsize(HEADER_FMT)    # Size of msg 'header'
 
-    def __init__(self):
-        """
-        MessageProtocol class initializer
-        """
-        # Format for variable message data
-        self.var_data_fmt = '%ds'
+def deserialize(byte_data):
+    """
+    Converts byte data into message object
 
-        # Struct format for message header
-        self.header_fmt = MsgProtocol.HEADER_FMT
+    :param byte_data: bytes to convert to message
 
-        self.unpack_fmt = MsgProtocol.NET_FMT   \
-            + MsgProtocol.MSG_TYPE_FMT      \
-            + self.var_data_fmt
+    :returns: Message object
+    """
+    payload_sz = len(byte_data) - HEADER_SZ_BYTES
+    dynamic_fmt = unpack_fmt % (payload_sz)
 
-        # Packing format with variable length data section
-        self.pack_fmt = self.header_fmt + self.var_data_fmt
+    msg_len, raw_msg_type, payload = struct.unpack(dynamic_fmt, byte_data)
 
-    def serialize(self, message):
-        """
-        Serializes message for sending over wire
+    return Msg(MsgType(raw_msg_type), payload)
 
-        :param message: message to send
 
-        :returns: Bytes object representing message to send
-        """
-        dynamic_fmt = self.pack_fmt % (len(message))
-        msg_sz = struct.calcsize(dynamic_fmt)
+# Unit Testing
+if __name__ == '__main__':
+    # Construct message
+    mt = MsgType.ENDPOINT_CONNECTION_BROADCAST
+    data = 'this is a payload'.encode()
+    message = Msg(mt, data)
 
-        return struct.pack(dynamic_fmt,
-                           msg_sz,
-                           message.msg_type,
-                           message.payload)
+    print('Message Pre-serialization')
+    print(message)
+    print()
 
-    def deserialize(self, byte_data, byte_len):
-        """
-        Converts byte data into message object
+    # Serialize message
+    serialized_msg = serialize(message)
 
-        :param byte_data: bytes to convert to message
-        :param byte_len: length of byte data
+    print('Message Post-serialization')
+    print(serialized_msg)
+    print()
 
-        :returns: Message object
-        """
-        dynamic_fmt = self.unpack_fmt % (byte_len - 1)
+    # Deserialize message
+    deserialized_msg = deserialize(serialized_msg)
 
-        msg_type, payload = struct.unpack(dynamic_fmt, byte_data)
-
-        return msg.construct(msg_type, payload)
+    print('Message Post-deserialization')
+    print(deserialized_msg)

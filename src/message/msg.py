@@ -1,18 +1,42 @@
 """
-Module defining message data formats.
+Module defining message structure.
 """
-from msg_enum import MsgEnum
+from enum import Enum, unique
+
+
+@unique
+class MsgType(Enum):
+    """
+    Class representing an enum for supported message types.
+    """
+    # Specifying integer type instead of auto for
+    # struct.pack/struct.unpack formatting scheme
+
+    # Message broadcast when a new Endpoint connects to LAN
+    ENDPOINT_CONNECTION_BROADCAST = 1
+    # Response to the new connection broadcast
+    ENDPOINT_CONNECTION_RESPONSE = 2
+    # Message broadcast to connected Enpoints when an Endpoint disconnects
+    ENDPOINT_DISCONNECTED_BROADCAST = 3
+    # Message for sending user communication between Endpoints
+    ENDPOINT_COMM = 4
+    # Acknowledgement that communication succeeded
+    ENDPOINT_COMM_ACKNOWLEDGEMENT = 5
+
+    NUM_MSG_TYPES = ENDPOINT_COMM_ACKNOWLEDGEMENT + 1
 
 
 class Msg(object):
     """
-    Base class for message data formats.
-    Derived classes specify different data formats for messages
-    sent between Endpoint applications.
+    Message class.
     """
 
     def __init__(self, msg_type, payload):
         """
+        'Constructor' for message
+
+        :param msg_type: Type of message denoted given by MsgType enum
+        :param payload: Message data as 'bytes' object
         """
         self.msg_type = msg_type
         self.payload = payload
@@ -25,97 +49,23 @@ class Msg(object):
         """
         return len(self.payload)
 
+    def __repr__(self):
+        return '<Msg type:%s payload:%s>' % \
+            (self.msg_type.name, self.payload)
 
-class ConnectionBroadcastMsg(Msg):
-    """
-    Derived class specifying format for connection broadcast message
-    """
-
-    def __init__(self, host_id):
-        """
-        """
-        super().__init__(MsgEnum.ENDPOINT_CONNECTION_BROADCAST,
-                         host_id)
+    def __str__(self):
+        return '\'Msg\' Object\nType:%s\nPayload:%s\nLen:%d' % \
+            (self.msg_type.name, self.payload, self.__len__())
 
 
-class ConnectionResponseMsg(Msg):
-    """
-    Derived class specifying format for connection broadcast response message
-    """
+# Unit Testing
+if __name__ == '__main__':
+    # Construct message
+    mt = MsgType.ENDPOINT_COMM
+    data = 'data'.encode()
+    message = Msg(mt, data)
 
-    def __init__(self, remote_id):
-        """
-        """
-        super().__init__(MsgEnum.ENDPOINT_CONNECTION_RESPONSE,
-                         remote_id)
-
-
-class DisconnectionBroadcastMsg(Msg):
-    """
-    Derived class specifying format for disconnection broadcast message
-    """
-
-    def __init__(self, host_id):
-        """
-        """
-        super().__init__(MsgEnum.ENDPOINT_DISCONNECTED_BROADCAST,
-                         host_id)
-
-
-class CommunicationMsg(Msg):
-    """
-    Derived class specifying format for general message
-    """
-
-    def __init__(self, data):
-        """
-        """
-        super().__init__(MsgEnum.ENDPOINT_COMMUNICATION,
-                         data)
-
-
-class AcknowledgementMsg(Msg):
-    """
-    Derived class specifying format for general message acknowledgement
-    """
-
-    def __init__(self):
-        """
-        """
-        super().__init__(MsgEnum.ENDPOINT_COMM_ACKNOWLEDGEMENT,
-                         bytes())
-
-
-@staticmethod
-def construct(msg_type, payload):
-    """
-    Factory function for constructing a message of the appropriate
-    type with the correct formatting for the payload
-
-    :param msg_type: Enum representing message type
-    :param payload: Raw message payload as Bytes
-
-    :returns: Message object
-    :raises: AttributeError if msg_type enum not supported
-    """
-    if msg_type == MsgEnum.ENDPOINT_COMMUNICATION:
-        # TODO format payload
-        return CommunicationMsg(payload)
-
-    elif msg_type == MsgEnum.ENDPOINT_COMM_ACKNOWLEDGEMENT:
-        return AcknowledgementMsg()
-
-    elif msg_type == MsgEnum.ENDPOINT_CONNECTION_BROADCAST:
-        # TODO format payload
-        return ConnectionBroadcastMsg(payload)
-
-    elif msg_type == MsgEnum.ENDPOINT_CONNECTION_RESPONSE:
-        # TODO format payload
-        return ConnectionResponseMsg(payload)
-
-    elif msg_type == MsgEnum.ENDPOINT_DISCONNECTED_BROADCAST:
-        # TODO format payload
-        return DisconnectionBroadcastMsg(payload)
-
-    else:
-        raise AttributeError('%s message type not supported' % (msg_type.name))
+    # Check relevant info
+    print(repr(message))
+    print()
+    print(message)
