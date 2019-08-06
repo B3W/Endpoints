@@ -50,12 +50,17 @@ class Msg(object):
         return len(self.payload)
 
     def __repr__(self):
-        return '<Msg type:%s payload:%s>' % \
-            (self.msg_type.name, self.payload)
+        return '<%s type:%s payload:%s>' \
+            % (self.__class__.__name__,
+               self.msg_type.name,
+               self.payload)
 
     def __str__(self):
-        return '\'Msg\' Object\nType:%s\nPayload:%s\nLen:%d' % \
-            (self.msg_type.name, self.payload, self.__len__())
+        return '\'%s\' Object\nType:%s\nPayload:%s\nLen:%d' \
+            % (self.__class__.__name__,
+               self.msg_type.name,
+               self.payload,
+               self.__len__())
 
 
 # Unit Testing

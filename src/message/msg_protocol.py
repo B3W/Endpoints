@@ -7,19 +7,21 @@ import struct
 
 
 NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
-LEN_PREF_FMT = 'H'  # Length-prefix formatting
-MSG_TYPE_FMT = 'B'  # Msg type flag formatting
-# TODO: Add checksum into the header
-HEADER_FMT = NET_FMT + LEN_PREF_FMT + MSG_TYPE_FMT  # Msg 'header' format
+LEN_PREF_FMT = 'H'  # Length-prefix formatting (2 bytes alloted)
+MSG_TYPE_FMT = 'B'  # Msg type flag formatting (1 byte alloted)
+MSG_HEADER_FMT = NET_FMT + LEN_PREF_FMT + MSG_TYPE_FMT  # Msg 'header' format
 
 LEN_PREF_SZ_BYTES \
     = struct.calcsize(LEN_PREF_FMT)  # Bytes alloted for length prefix
 HEADER_SZ_BYTES   \
-    = struct.calcsize(HEADER_FMT)    # Size of msg 'header'
+    = struct.calcsize(MSG_HEADER_FMT)    # Size of msg 'header'
 
 variable_data_fmt = '%ds'  # Format for variable message data
-pack_fmt = HEADER_FMT + variable_data_fmt  # Packing format
-unpack_fmt = HEADER_FMT + variable_data_fmt  # Unpacking format
+
+# TODO: Add checksum onto end of packet
+
+pack_fmt = MSG_HEADER_FMT + variable_data_fmt  # Packing format
+unpack_fmt = MSG_HEADER_FMT + variable_data_fmt  # Unpacking format
 
 
 def serialize(message):
