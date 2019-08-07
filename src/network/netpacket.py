@@ -14,6 +14,7 @@ class NetPacket(object):
 
         :param endpoint_src: Source node
         :param endpoint_dst: Destination node
+        :param msg_payload: Encoded message to send
         """
         self.endpoint_src = endpoint_src
         self.endpoint_dst = endpoint_dst
