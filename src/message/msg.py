@@ -51,23 +51,19 @@ class Msg(object):
 
     def __repr__(self):
         return '<%s type:%s payload:%s>' \
-            % (self.__class__.__name__,
-               self.msg_type.name,
-               self.payload)
+            % (self.__class__.__name__, self.msg_type.name, self.payload)
 
     def __str__(self):
         return '\'%s\' Object\nType:%s\nPayload:%s\nLen:%d' \
-            % (self.__class__.__name__,
-               self.msg_type.name,
-               self.payload,
-               self.__len__())
+            % (self.__class__.__name__, self.msg_type.name,
+               self.payload, self.__len__())
 
 
 # Unit Testing
 if __name__ == '__main__':
     # Construct message
     mt = MsgType.ENDPOINT_COMM
-    data = 'data'.encode()
+    data = 'data'.encode('utf-8')
     message = Msg(mt, data)
 
     # Check relevant info

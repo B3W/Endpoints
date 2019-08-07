@@ -23,10 +23,10 @@ class NetID(object):
         """
         Gets the length of NetID
 
-        :returns: Length of byte representation of NetID object
+        :returns: Length of byte encoding of NetID object
         """
-        return len(self.endpoint_name.encode('utf-8')
-                   + self.endpoint_ip.encode('utf-8'))
+        return len(self.endpoint_name.encode('utf-8')) \
+            + len(self.endpoint_ip.encode('utf-8'))
 
     def __repr__(self):
         return '<%s name:%s ip:%s>' \
@@ -35,3 +35,17 @@ class NetID(object):
     def __str__(self):
         return '\'%s\' Object\nName:%s\nIP:%s' \
             % (self.__class__.__name__, self.endpoint_name, self.endpoint_ip)
+
+
+# Unit Testing
+if __name__ == "__main__":
+    name = 'endpoint'
+    ip = '192.168.100.1'
+
+    id = NetID(name, ip)
+
+    print('NetID __repr__')
+    print(id.__repr__())
+
+    print('\nNetID __str__')
+    print(id)
