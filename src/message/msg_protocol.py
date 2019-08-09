@@ -1,6 +1,5 @@
 """
-Module defining the protocol for sending and receiving
-data between Endpoint applications.
+Module defining the protocol for serializing and deserializing messages.
 """
 from msg import Msg, MsgType
 import struct
