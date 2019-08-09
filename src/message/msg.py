@@ -1,5 +1,5 @@
 """
-Module defining message structure.
+Module defining message structure and message types.
 """
 from enum import Enum, unique
 
@@ -7,7 +7,7 @@ from enum import Enum, unique
 @unique
 class MsgType(Enum):
     """
-    Class representing an enum for supported message types.
+    Enum of supported message types.
     """
     # Specifying integer type instead of auto for
     # struct.pack/struct.unpack formatting scheme
@@ -28,7 +28,7 @@ class MsgType(Enum):
 
 class Msg(object):
     """
-    Message class.
+    Structure representing message to be sent between Endpoints
     """
 
     def __init__(self, msg_type, payload):
