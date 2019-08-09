@@ -5,15 +5,15 @@ Module defining Enpoint network packet structure.
 
 class NetPacket(object):
     """
-    NetPacket class.
+    Structure for sending data between Endpoints
     """
 
     def __init__(self, endpoint_src, endpoint_dst, msg_payload):
         """
         'Constructor' for NetPacket
 
-        :param endpoint_src: Source node
-        :param endpoint_dst: Destination node
+        :param endpoint_src: Source node IP
+        :param endpoint_dst: Destination node IP
         :param msg_payload: Encoded message to send
         """
         self.endpoint_src = endpoint_src
@@ -22,9 +22,9 @@ class NetPacket(object):
 
     def __len__(self):
         """
-        Gets the length of NetPacket message payload
+        Gets the length of NetPacket
 
-        :returns: Length of NetPacket payload
+        :returns: Length of packet encoded as bytes
         """
         return len(self.msg_payload)
 
