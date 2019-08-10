@@ -59,6 +59,20 @@ class Msg(object):
                self.payload, self.__len__())
 
 
+def construct_connection_msg(msg_type, net_id):
+    '''
+    Constructs connection message with given parameters
+    '''
+    return Msg(msg_type, net_id.tobytes())
+
+
+def construct_communication_msg(msg_type, msg=''):
+    '''
+    Constructs communication message with given parameters
+    '''
+    return(msg_type, msg.encode('utf-8'))
+
+
 # Unit Testing
 if __name__ == '__main__':
     # Construct message
