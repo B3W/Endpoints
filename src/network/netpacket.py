@@ -43,8 +43,8 @@ class NetPacket(object):
 if __name__ == '__main__':
     import netid
 
-    src_id = netid.NetID('endpoint1', '192.168.100.1')
-    dst_id = netid.NetID('endpoint2', '192.168.100.2')
+    src_id = netid.NetID('endpoint1')
+    dst_id = netid.NetID('endpoint2')
     payload = 'this is a packet payload'.encode('utf-8')
 
     pkt = NetPacket(src_id, dst_id, payload)
