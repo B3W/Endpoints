@@ -1,7 +1,7 @@
 """
 Module defining the protocol for serializing and deserializing messages.
 """
-from msg import Msg, MsgType
+import msg
 import struct
 
 
@@ -53,15 +53,16 @@ def deserialize(byte_data):
 
     msg_len, raw_msg_type, payload = struct.unpack(dynamic_fmt, byte_data)
 
-    return Msg(MsgType(raw_msg_type), payload)
+    return msg.construct(msg.MsgType(raw_msg_type), payload)
 
 
 # Unit Testing
 if __name__ == '__main__':
     # Construct message
-    mt = MsgType.ENDPOINT_CONNECTION_BROADCAST
+    mt = msg.MsgType.ENDPOINT_COMMUNICATION
     data = 'this is a payload'.encode()
-    message = Msg(mt, data)
+
+    message = msg.construct(mt, data)
 
     print('Message Pre-serialization')
     print(message)
