@@ -16,6 +16,7 @@ class ConfigEnum(enum.Enum):
 
 
 # Dictionary for conversion between enum and JSON field name
+# ***When adding settings to configuration only this dictionary needs edited***
 KEY_MAP = {
     ConfigEnum.RX_PORT: 'receive_port',
     ConfigEnum.BYTE_ENCODING: 'byte_encoding'
