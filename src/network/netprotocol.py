@@ -2,7 +2,7 @@
 Module defining protocol for serializing and deserializing NetPackets for
 sending and receiving data between Endpoint applications.
 """
-import netpacket
+from network import netpacket
 import struct
 
 
@@ -63,7 +63,7 @@ def deserialize(byte_data):
 
 
 # Unit Testing
-if __name__ == '__main__':
+def test():
     pkt = netpacket.NetPacket('127.000.000.001',
                               '127.000.000.002',
                               'message data'.encode('utf-8'))

@@ -2,7 +2,7 @@
 Module defining message structure and message types.
 """
 import enum
-import netid
+from network import netid
 
 
 @enum.unique
@@ -110,14 +110,18 @@ def decode_payload(message):
 
 
 # Unit Testing
-if __name__ == '__main__':
+def test():
     # Construct message
     mt = MsgType.ENDPOINT_COMMUNICATION
-    data = 'data'.encode('utf-8')
+    data = 'this is data'.encode('utf-8')
 
     message = construct(mt, data)
 
     # Check relevant info
     print(repr(message))
-    print()
     print(message)
+    print()
+
+    data = decode_payload(message)
+    print('Decoded message payload:')
+    print(data)

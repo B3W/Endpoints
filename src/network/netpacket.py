@@ -40,8 +40,8 @@ class NetPacket(object):
 
 
 # Unit Testing
-if __name__ == '__main__':
-    import netid
+def test():
+    from network import netid
 
     src_id = netid.NetID('endpoint1')
     dst_id = netid.NetID('endpoint2')
