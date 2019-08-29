@@ -1,6 +1,7 @@
 """
 Module defining message structure and message types.
 """
+from config import config as c
 import enum
 from network import netid
 
@@ -81,7 +82,9 @@ def construct(msg_type, payload=b''):
     elif msg_type in COMMUNICATION_MSG_TYPES:
         # Payload is a string or bytes object
         try:
-            byte_data = payload.encode('utf-8')
+            byte_data \
+                = payload.encode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
+
         except AttributeError:
             # Bytes object so no need to encode
             byte_data = payload
@@ -102,7 +105,8 @@ def decode_payload(message):
 
     elif message.msg_type in COMMUNICATION_MSG_TYPES:
         # Payload is a string or bytes object
-        return message.payload.decode('utf-8')
+        return message.payload.decode(
+            c.Config.get(c.ConfigEnum.BYTE_ENCODING))
 
     else:
         raise ValueError('%s is not a supported MsgType'
@@ -113,7 +117,7 @@ def decode_payload(message):
 def test():
     # Construct message
     mt = MsgType.ENDPOINT_COMMUNICATION
-    data = 'this is data'.encode('utf-8')
+    data = 'this is data'
 
     message = construct(mt, data)
 

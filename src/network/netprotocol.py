@@ -2,6 +2,7 @@
 Module defining protocol for serializing and deserializing NetPackets for
 sending and receiving data between Endpoint applications.
 """
+from config import config as c
 from network import netpacket
 import struct
 
@@ -39,8 +40,10 @@ def serialize(packet):
 
     return struct.pack(dynamic_fmt,
                        msg_sz,
-                       packet.endpoint_src.encode('utf-8'),
-                       packet.endpoint_dst.encode('utf-8'),
+                       packet.endpoint_src.encode(
+                           c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
+                       packet.endpoint_dst.encode(
+                           c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
                        packet.msg_payload)
 
 
@@ -57,8 +60,10 @@ def deserialize(byte_data):
 
     pkt_len, src, dst, payload = struct.unpack(dynamic_fmt, byte_data)
 
-    return netpacket.NetPacket(src.decode('utf-8'),
-                               dst.decode('utf-8'),
+    return netpacket.NetPacket(src.decode(
+                                   c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
+                               dst.decode(
+                                   c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
                                payload)
 
 
@@ -66,7 +71,8 @@ def deserialize(byte_data):
 def test():
     pkt = netpacket.NetPacket('127.000.000.001',
                               '127.000.000.002',
-                              'message data'.encode('utf-8'))
+                              'message data'.encode(
+                                  c.Config.get(c.ConfigEnum.BYTE_ENCODING)))
 
     print('Pre-Serialization')
     print(pkt)

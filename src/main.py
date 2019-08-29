@@ -5,6 +5,7 @@ from config import config
 # Testing
 # from message import msg
 # from message import msgprotocol
+# from network import netid
 # from network import netpacket
 # from network import netprotocol
 
@@ -15,6 +16,7 @@ if __name__ == '__main__':
     # Testing
     # msg.test()
     # msgprotocol.test()
+    # netid.test()
     # netpacket.test()
     # netprotocol.test()
 
