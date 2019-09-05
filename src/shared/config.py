@@ -29,8 +29,8 @@ class Config(object):
     '''
     Class holding application's configuration
     '''
-    # Absolute path to the configuration file
-    _CONFIG_FILE_PATH = os.path.abspath('config.json')
+    # Default absolute path to the configuration file
+    _config_file_path = os.path.abspath('config.json')
     # Handle for holding configuration data
     _config = None
 
@@ -59,27 +59,30 @@ class Config(object):
             raise
 
     @staticmethod
-    def load():
+    def load(config_path=_config_file_path):
         '''
         Reads in configuration from disk
+
+        :param config_path: Absoulte path to configuration
         '''
         # Validate file path
-        file_path = Config._CONFIG_FILE_PATH
-
-        if not os.path.isfile(file_path):
+        if not os.path.isfile(config_path):
             raise FileNotFoundError('Configuration file \'%s\' does not exist.'
-                                    % (file_path))
+                                    % (config_path))
 
         # Update configuration
-        with open(file_path, 'r') as json_file:
+        with open(config_path, 'r') as json_file:
             Config._config = json.load(json_file)
+
+        # Update path to configuration
+        Config._config_file_path = config_path
 
     @staticmethod
     def write():
         '''
         Writes the configuration to disk
         '''
-        with open(Config._CONFIG_FILE_PATH, 'w') as json_file:
+        with open(Config._config_file_path, 'w') as json_file:
             json.dump(Config._config, json_file)
 
 
