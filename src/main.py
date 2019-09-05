@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     # Start UDP listener for connection broadcasts
     rx_port = c.Config.get(c.ConfigEnum.RX_PORT)
-    # netserve.start(net_id, host_ip, rx_port)
+    netserve.start(rx_port, host_ip, net_id)
 
     # Dict of connected and detected Endpoints with mapping (NetID, IP)
     endpoints = deque()
@@ -53,6 +53,25 @@ if __name__ == '__main__':
     print('Found following Endpoints on LAN:')
     for endpoint in endpoints:
         print(endpoint)
+
+    # FOR TESTING PURPOSES ONLY
+    import signal
+    from time import sleep
+
+    def sigint_handler(signum, stack_frame):
+        global done
+        netserve.kill()
+        done = True
+
+    signal.signal(signal.SIGINT, sigint_handler)
+
+    global done
+    done = False
+
+    while not done:
+        sleep(1.0)
+
+    signal.signal(signal.SIGINT, signal.default_int_handler)
 
     # Testing
     # msg.test()

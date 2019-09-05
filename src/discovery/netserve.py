@@ -35,7 +35,7 @@ def kill():
     _g_mainloop_thread.join(timeout=thread_join_timeout)
 
     # Check if thread was joined in time
-    if _g_mainloop_thread.is_active():
+    if _g_mainloop_thread.is_alive():
         # TODO Log error?
         pass
 
