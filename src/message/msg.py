@@ -19,7 +19,7 @@ class MsgType(enum.Enum):
     # Response to the new connection broadcast
     ENDPOINT_CONNECTION_RESPONSE = 2
     # Message broadcast to connected Enpoints when an Endpoint disconnects
-    ENDPOINT_DISCONNECTED_BROADCAST = 3
+    ENDPOINT_DISCONNECTION = 3
     # Message for sending user communication between Endpoints
     ENDPOINT_COMMUNICATION = 4
     # Acknowledgement that communication succeeded
@@ -63,7 +63,7 @@ class Msg(object):
 # Used for validation of MsgType
 CONNECTION_MSG_TYPES = [MsgType.ENDPOINT_CONNECTION_BROADCAST,
                         MsgType.ENDPOINT_CONNECTION_RESPONSE,
-                        MsgType.ENDPOINT_DISCONNECTED_BROADCAST]
+                        MsgType.ENDPOINT_DISCONNECTION]
 
 COMMUNICATION_MSG_TYPES = [MsgType.ENDPOINT_COMMUNICATION,
                            MsgType.ENDPOINT_COMMUNICATION_ACK]
