@@ -42,9 +42,9 @@ def serialize(packet):
 
     return struct.pack(dynamic_fmt,
                        msg_sz,
-                       packet.endpoint_src.encode(
+                       packet.src.encode(
                            c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
-                       packet.endpoint_dst.encode(
+                       packet.dst.encode(
                            c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
                        packet.msg_payload)
 
