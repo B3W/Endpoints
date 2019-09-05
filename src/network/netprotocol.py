@@ -60,17 +60,19 @@ def deserialize(byte_data):
 
     pkt_len, src, dst, payload = struct.unpack(dynamic_fmt, byte_data)
 
-    return netpacket.NetPacket(src.decode(
-                                   c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
-                               dst.decode(
-                                   c.Config.get(c.ConfigEnum.BYTE_ENCODING)),
-                               payload)
+    # Decode IP addresses. IPs may have pad bytes if the address is not a full
+    # 15 bytes during serialization (i.e. 192.168.100.100 vs 192.168.1.1).
+    # Therefore, strip of all of those padding bytes after decoding.
+    src = src.decode(c.Config.get(c.ConfigEnum.BYTE_ENCODING)).strip('\x00')
+    dst = dst.decode(c.Config.get(c.ConfigEnum.BYTE_ENCODING)).strip('\x00')
+
+    return netpacket.NetPacket(src, dst, payload)
 
 
 # Unit Testing
 def test():
-    pkt = netpacket.NetPacket('127.000.000.001',
-                              '127.000.000.002',
+    pkt = netpacket.NetPacket('127.0.0.1',
+                              '127.0.0.2',
                               'message data'.encode(
                                   c.Config.get(c.ConfigEnum.BYTE_ENCODING)))
 
