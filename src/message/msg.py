@@ -69,7 +69,7 @@ COMMUNICATION_MSG_TYPES = [MsgType.ENDPOINT_COMMUNICATION,
                            MsgType.ENDPOINT_COMMUNICATION_ACK]
 
 
-def construct(msg_type, payload=b''):
+def construct(msg_type, payload):
     '''
     Constructs appropriate message based on given arguments
     '''
