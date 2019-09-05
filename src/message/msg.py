@@ -55,7 +55,7 @@ class Msg(object):
             % (self.__class__.__name__, self.msg_type.name, self.payload)
 
     def __str__(self):
-        return '\'%s\' Object\nType:%s\nPayload:%s\nLen:%d' \
+        return '<\'%s\' Object Type:%s Payload:%s Len:%d>' \
             % (self.__class__.__name__, self.msg_type.name,
                self.payload, self.__len__())
 

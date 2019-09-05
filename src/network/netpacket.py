@@ -34,7 +34,7 @@ class NetPacket(object):
                self.dst.__repr__(), self.msg_payload)
 
     def __str__(self):
-        return '\'%s\' Object\nSrc:%s\nDst:%s\nPayload:%s' \
+        return '<\'%s\' Object Src:%s Dst:%s Payload:%s>' \
             % (self.__class__.__name__, self.src,
                self.dst, self.msg_payload)
 
