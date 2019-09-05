@@ -2,7 +2,7 @@
 Module defining protocol for serializing and deserializing NetPackets for
 sending and receiving data between Endpoint applications.
 """
-from config import config as c
+from shared import config as c
 from network import netpacket
 import struct
 

@@ -1,7 +1,7 @@
 '''
 Module defining structure for Endpoint identifying information
 '''
-from config import config as c
+from shared import config as c
 import struct
 
 

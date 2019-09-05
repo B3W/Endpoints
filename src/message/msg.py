@@ -1,7 +1,7 @@
 """
 Module defining message structure and message types.
 """
-from config import config as c
+from shared import config as c
 import enum
 from network import netid
 

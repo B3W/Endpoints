@@ -13,13 +13,15 @@ class ConfigEnum(enum.Enum):
     '''
     RX_PORT = enum.auto()
     BYTE_ENCODING = enum.auto()
+    ENDPOINT_NAME = enum.auto()
 
 
 # Dictionary for conversion between enum and JSON field name
 # ***When adding settings to configuration only this dictionary needs edited***
 KEY_MAP = {
     ConfigEnum.RX_PORT: 'receive_port',
-    ConfigEnum.BYTE_ENCODING: 'byte_encoding'
+    ConfigEnum.BYTE_ENCODING: 'byte_encoding',
+    ConfigEnum.ENDPOINT_NAME: 'endpoint_name'
 }
 
 

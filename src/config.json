@@ -1,4 +1,5 @@
 {
     "receive_port": 3434,
-    "byte_encoding": "utf-8"
+    "byte_encoding": "utf-8",
+    "endpoint_name": ""
 }
