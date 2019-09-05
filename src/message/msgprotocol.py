@@ -49,6 +49,11 @@ def deserialize(byte_data):
     :returns: Message object
     """
     payload_sz = len(byte_data) - HEADER_SZ_BYTES
+
+    # Validate byte_data
+    if payload_sz < 0:
+        raise ValueError('Attempt to deserialize invalid message')
+
     dynamic_fmt = unpack_fmt % (payload_sz)
 
     msg_len, raw_msg_type, payload = struct.unpack(dynamic_fmt, byte_data)

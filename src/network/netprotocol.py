@@ -56,6 +56,11 @@ def deserialize(byte_data):
     :returns: NetPacket
     """
     payload_sz = len(byte_data) - HEADER_SZ_BYTES
+
+    # Validate byte_data
+    if payload_sz < 0:
+        raise ValueError('Attempt to deserialize invalid packet')
+
     dynamic_fmt = unpack_fmt % (payload_sz)
 
     pkt_len, src, dst, payload = struct.unpack(dynamic_fmt, byte_data)
