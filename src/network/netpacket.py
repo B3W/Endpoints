@@ -16,8 +16,8 @@ class NetPacket(object):
         :param endpoint_dst: Destination node IP
         :param msg_payload: Encoded message to send
         """
-        self.endpoint_src = endpoint_src
-        self.endpoint_dst = endpoint_dst
+        self.src = endpoint_src
+        self.dst = endpoint_dst
         self.msg_payload = msg_payload
 
     def __len__(self):
@@ -30,21 +30,21 @@ class NetPacket(object):
 
     def __repr__(self):
         return '<%s src:%s dst:%s payload:%s>' \
-            % (self.__class__.__name__, self.endpoint_src.__repr__(),
-               self.endpoint_dst.__repr__(), self.msg_payload)
+            % (self.__class__.__name__, self.src.__repr__(),
+               self.dst.__repr__(), self.msg_payload)
 
     def __str__(self):
         return '\'%s\' Object\nSrc:%s\nDst:%s\nPayload:%s' \
-            % (self.__class__.__name__, self.endpoint_src,
-               self.endpoint_dst, self.msg_payload)
+            % (self.__class__.__name__, self.src,
+               self.dst, self.msg_payload)
 
 
 # Unit Testing
 def test():
     from network import netid
 
-    src_id = netid.NetID('endpoint1')
-    dst_id = netid.NetID('endpoint2')
+    src_id = netid.NetID('192.168.1.100')
+    dst_id = netid.NetID('192.168.1.101')
     payload = 'this is a packet payload'.encode('utf-8')
 
     pkt = NetPacket(src_id, dst_id, payload)
