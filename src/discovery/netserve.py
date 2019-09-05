@@ -2,11 +2,14 @@
 Module providing server for responding to Enpoint broadcasts over LAN.
 Server runs on a separate thread from caller.
 """
+import logging
 from message import msgprotocol
 from network import netprotocol
 import select
 import socket
 import threading
+
+_g_logger = logging.getLogger(__name__)
 
 
 def kill():
@@ -18,10 +21,16 @@ def kill():
     try:
         # 'start' called at least once but thread is inactive
         if not _g_mainloop_thread.is_alive():
+            _g_logger.critical('Attempted to kill broadcast server'
+                               ' which has not been started')
+
             raise RuntimeError('Cannot kill broadcast server'
                                ' which has not been started')
     except NameError:
         # 'start' never called so _g_mainloop_thread not defined
+        _g_logger.critical('Attempted to kill broadcast server'
+                           ' which has not been started')
+
         raise RuntimeError('Cannot kill broadcast server'
                            ' which has not been started')
 
@@ -31,13 +40,16 @@ def kill():
     _g_kill_sock.send(b'1')
     _g_kill_sock.close()
 
+    _g_logger.info('Kill signal sent to broadcast server')
+
     # Attempt to join mainloop thread
     _g_mainloop_thread.join(timeout=thread_join_timeout)
 
     # Check if thread was joined in time
     if _g_mainloop_thread.is_alive():
-        # TODO Log error?
-        pass
+        _g_logger.error('Unable to join broadcast server\'s thread')
+
+    _g_logger.info('Broadcast server closed')
 
 
 def __cleanup(inputs, outputs):
@@ -81,26 +93,33 @@ def __mainloop(server, kill_sock, host_id, host_ip):
 
                 # Check if data available
                 if not rx_data:
+                    _g_logger.error('Received empty data')
                     continue  # No data read from socket
 
                 # Check for valid packet
                 try:
                     net_pkt = netprotocol.deserialize(rx_data)
                 except ValueError:
+                    _g_logger.error('Received data is not a valid packet')
                     continue  # Invalid packet
 
                 # Sanity check IP addressing
                 if net_pkt.src == host_ip or net_pkt.dst != host_ip:
+                    _g_logger.error('Received data\'s addressing invalid')
                     continue  # Invalid address(es)
 
                 # Check if message is appropriate type of broadcast
                 if msgprotocol.is_connect_broadcast(net_pkt.msg_payload):
+                    _g_logger.info('Valid broadcast received')
+
                     # TODO Extract information from message
                     # TODO Schedule response
-                    # TODO Add device to connections list?
+                    # TODO Add device to connections list
                     pass
 
             elif s is kill_sock:
+                _g_logger.info('Broadcast server received kill signal')
+
                 done = True  # End server after this iteration of mainloop
                 s.recv(recv_buf_sz)  # Clear out dummy data
 
@@ -109,6 +128,9 @@ def __mainloop(server, kill_sock, host_id, host_ip):
             # Send out data over socket
             data, addr = msg_queues[s]
             s.sendto(data, addr)
+
+            _g_logger.info('Broadcast server sent \'%s\' to \'%s\'',
+                           data, addr)
 
             # Cleanup socket data
             s.close()
@@ -165,6 +187,8 @@ def start(port, host_ip, host_id):
     recv_kill_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
     recv_kill_sock.setblocking(False)
 
+    _g_logger.info('Dummy TCP socket pair created and configured')
+
     # Create and configure UDP server socket to receive UDP broadcasts
     server_addr = ('', port)  # Listen on all interfaces
 
@@ -174,6 +198,8 @@ def start(port, host_ip, host_id):
 
     server.bind(server_addr)
 
+    _g_logger.info('UDP server port created and configured')
+
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
                                           args=(server,
@@ -181,3 +207,5 @@ def start(port, host_ip, host_id):
                                                 host_id,
                                                 host_ip))
     _g_mainloop_thread.start()
+
+    _g_logger.info('Broadcast server\'s mainloop started')
