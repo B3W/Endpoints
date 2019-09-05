@@ -2,6 +2,8 @@
 Module providing server for responding to Enpoint broadcasts over LAN.
 Server runs on a separate thread from caller.
 """
+from message import msgprotocol
+from network import netprotocol
 import select
 import socket
 import threading
@@ -10,7 +12,7 @@ import threading
 def kill():
     '''
     Gracefully stops the broadcast server and attempts to
-    release thread resources
+    release thread resources.
     '''
     # Server is only killable if it has been started
     try:
@@ -52,7 +54,7 @@ def __cleanup(inputs, outputs):
         s.close()
 
 
-def __mainloop(server, kill_sock):
+def __mainloop(server, kill_sock, host_id, host_ip):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
@@ -75,10 +77,27 @@ def __mainloop(server, kill_sock):
         for s in readable:
             if s is server:
                 # Potential broadcast received
-                data, addr = s.recvfrom(recv_buf_sz)
+                rx_data, rx_addr = s.recvfrom(recv_buf_sz)
 
-                if data:
-                    # ****TODO check for valid broadcast, if not discard****
+                # Check if data available
+                if not rx_data:
+                    continue  # No data read from socket
+
+                # Check for valid packet
+                try:
+                    net_pkt = netprotocol.deserialize(rx_data)
+                except ValueError:
+                    continue  # Invalid packet
+
+                # Sanity check IP addressing
+                if net_pkt.src == host_ip or net_pkt.dst != host_ip:
+                    continue  # Invalid address(es)
+
+                # Check if message is appropriate type of broadcast
+                if msgprotocol.is_connect_broadcast(net_pkt.msg_payload):
+                    # TODO Extract information from message
+                    # TODO Schedule response
+                    # TODO Add device to connections list?
                     pass
 
             elif s is kill_sock:
@@ -125,11 +144,14 @@ def __mainloop(server, kill_sock):
     __cleanup(inputs, outputs)
 
 
-def start(port):
+def start(port, host_ip, host_id):
     '''
     Starts up broadcast server's mainloop on separate thread
+    and returns control to caller.
 
     :param port: Port for broadcast server to listen on
+    :param host_ip: Endpoint NetID for local machine
+    :param host_ip: IP address of local machine
     '''
     global _g_kill_sock
     global _g_mainloop_thread
@@ -154,5 +176,8 @@ def start(port):
 
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
-                                          args=(server, recv_kill_sock))
+                                          args=(server,
+                                                recv_kill_sock,
+                                                host_id,
+                                                host_ip))
     _g_mainloop_thread.start()
