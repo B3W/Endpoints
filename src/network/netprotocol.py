@@ -2,8 +2,9 @@
 Module defining protocol for serializing and deserializing NetPackets for
 sending and receiving data between Endpoint applications.
 """
-from shared import config as c
+from message import msgprotocol
 from network import netpacket
+from shared import config as c
 import struct
 
 
@@ -56,12 +57,11 @@ def deserialize(byte_data):
 
     :returns: NetPacket
     """
-    payload_sz = len(byte_data) - g_HEADER_SZ_BYTES
-
     # Validate byte_data
-    if payload_sz < 0:
+    if not is_valid_pkt(byte_data):
         raise ValueError('Attempt to deserialize invalid packet')
 
+    payload_sz = len(byte_data) - g_HEADER_SZ_BYTES
     dynamic_fmt = unpack_fmt % (payload_sz)
 
     pkt_len, src, dst, payload = struct.unpack(dynamic_fmt, byte_data)
@@ -75,12 +75,32 @@ def deserialize(byte_data):
     return netpacket.NetPacket(src, dst, payload)
 
 
+def is_valid_pkt(byte_data):
+    '''
+    Validates whether or not bytes represent a netpacket
+
+    :param byte_data: Bytes to validate
+    :returns: True if valid, False otherwise
+    '''
+    valid = False
+
+    if len(byte_data) < (g_HEADER_SZ_BYTES + msgprotocol.g_HEADER_SZ_BYTES):
+        # Pkt contains both network header and message header
+        valid = False
+    else:
+        # Check for valid message payload
+        msg_payload = byte_data[g_HEADER_SZ_BYTES:]
+
+        valid = msgprotocol.is_valid_msg(msg_payload)
+
+    return valid
+
+
 # Unit Testing
 def test():
-    pkt = netpacket.NetPacket('127.0.0.1',
-                              '127.0.0.2',
-                              'message data'.encode(
-                                  c.Config.get(c.ConfigEnum.BYTE_ENCODING)))
+    enc_msg = '\x00\x12\x04message payload'.encode(
+        c.Config.get(c.ConfigEnum.BYTE_ENCODING))
+    pkt = netpacket.NetPacket('127.0.0.1', '127.0.0.2', enc_msg)
 
     print('Pre-Serialization')
     print(pkt)
@@ -88,6 +108,10 @@ def test():
     enc_pkt = serialize(pkt)
     print('\nPost-Serialization')
     print(enc_pkt)
+
+    # Check validation methods
+    if not is_valid_pkt(enc_pkt):
+        raise ValueError('Unable to validate packet during testing')
 
     dec_pkt = deserialize(enc_pkt)
     print('\nPost-Deserialization')
