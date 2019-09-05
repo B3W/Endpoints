@@ -5,22 +5,24 @@ from message import msg
 import struct
 
 
-NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
-LEN_PREF_FMT = 'H'  # Length-prefix formatting (2 bytes alloted)
-MSG_TYPE_FMT = 'B'  # Msg type flag formatting (1 byte alloted)
-MSG_HEADER_FMT = NET_FMT + LEN_PREF_FMT + MSG_TYPE_FMT  # Msg 'header' format
+_g_NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
+_g_LEN_PREF_FMT = 'H'  # Length-prefix formatting (2 bytes alloted)
+_g_MSG_TYPE_FMT = 'B'  # Msg type flag formatting (1 byte alloted)
 
-LEN_PREF_SZ_BYTES \
-    = struct.calcsize(LEN_PREF_FMT)  # Bytes alloted for length prefix
-HEADER_SZ_BYTES   \
-    = struct.calcsize(MSG_HEADER_FMT)    # Size of msg 'header'
+# Bytes alloted for length prefix
+g_LEN_PREF_SZ_BYTES = struct.calcsize(_g_LEN_PREF_FMT)
+
+# Msg 'header' format
+g_MSG_HEADER_FMT = _g_NET_FMT + _g_LEN_PREF_FMT + _g_MSG_TYPE_FMT
+# Size of msg 'header'
+g_HEADER_SZ_BYTES = struct.calcsize(g_MSG_HEADER_FMT)
 
 variable_data_fmt = '%ds'  # Format for variable message data
 
 # TODO: Add checksum onto end of packet
 
-pack_fmt = MSG_HEADER_FMT + variable_data_fmt  # Packing format
-unpack_fmt = MSG_HEADER_FMT + variable_data_fmt  # Unpacking format
+pack_fmt = g_MSG_HEADER_FMT + variable_data_fmt  # Packing format
+unpack_fmt = g_MSG_HEADER_FMT + variable_data_fmt  # Unpacking format
 
 
 def serialize(message):
@@ -48,7 +50,7 @@ def deserialize(byte_data):
 
     :returns: Message object
     """
-    payload_sz = len(byte_data) - HEADER_SZ_BYTES
+    payload_sz = len(byte_data) - g_HEADER_SZ_BYTES
 
     # Validate byte_data
     if payload_sz < 0:

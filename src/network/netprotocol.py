@@ -7,24 +7,25 @@ from network import netpacket
 import struct
 
 
-NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
-LEN_PREF_FMT = 'H'  # Length-prefix formatting (2 bytes alloted)
-SRC_IP_FMT = '15s'  # IP formatting (xxx.xxx.xxx.xxx)
-DST_IP_FMT = '15s'  # IP formatting (xxx.xxx.xxx.xxx)
-MSG_HEADER_FMT = NET_FMT + LEN_PREF_FMT \
-    + SRC_IP_FMT + DST_IP_FMT  # Pkt 'header' format
+_g_NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
+_g_LEN_PREF_FMT = 'H'  # Length-prefix formatting (2 bytes alloted)
+_g_SRC_IP_FMT = '15s'  # IP formatting (xxx.xxx.xxx.xxx)
+_g_DST_IP_FMT = '15s'  # IP formatting (xxx.xxx.xxx.xxx)
+
+# Bytes alloted for length prefix
+g_LEN_PREF_SZ_BYTES = struct.calcsize(_g_LEN_PREF_FMT)
+
+# Pkt 'header' format
+g_MSG_HEADER_FMT = _g_NET_FMT + _g_LEN_PREF_FMT + _g_SRC_IP_FMT + _g_DST_IP_FMT
+# Size of msg 'header'
+g_HEADER_SZ_BYTES = struct.calcsize(g_MSG_HEADER_FMT)
 
 variable_data_fmt = '%ds'  # Format for variable message data
 
 # TODO: Add checksum onto end of packet
 
-LEN_PREF_SZ_BYTES \
-    = struct.calcsize(LEN_PREF_FMT)  # Bytes alloted for length prefix
-HEADER_SZ_BYTES   \
-    = struct.calcsize(MSG_HEADER_FMT)    # Size of msg 'header'
-
-pack_fmt = MSG_HEADER_FMT + variable_data_fmt  # Packing format
-unpack_fmt = MSG_HEADER_FMT + variable_data_fmt  # Unpacking format
+pack_fmt = g_MSG_HEADER_FMT + variable_data_fmt  # Packing format
+unpack_fmt = g_MSG_HEADER_FMT + variable_data_fmt  # Unpacking format
 
 
 def serialize(packet):
@@ -55,7 +56,7 @@ def deserialize(byte_data):
 
     :returns: NetPacket
     """
-    payload_sz = len(byte_data) - HEADER_SZ_BYTES
+    payload_sz = len(byte_data) - g_HEADER_SZ_BYTES
 
     # Validate byte_data
     if payload_sz < 0:
