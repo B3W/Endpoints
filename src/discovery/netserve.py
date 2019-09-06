@@ -3,8 +3,8 @@ Module providing server for responding to Enpoint broadcasts over LAN.
 Server runs on a separate thread from caller.
 """
 import logging
-from message import msgprotocol
-from network import netprotocol
+from message import msg, msgprotocol
+from network import netpacket, netprotocol
 import select
 import socket
 import threading
@@ -104,16 +104,29 @@ def __mainloop(server, kill_sock, host_id, host_ip):
                     continue  # Invalid packet
 
                 # Sanity check IP addressing
-                if net_pkt.src == host_ip or net_pkt.dst != host_ip:
+                if net_pkt.src != rx_addr[0] \
+                   or net_pkt.src == host_ip \
+                   or net_pkt.dst != host_ip:
                     _g_logger.error('Received data\'s addressing invalid')
                     continue  # Invalid address(es)
 
                 # Check if message is appropriate type of broadcast
                 if msgprotocol.is_connect_broadcast(net_pkt.msg_payload):
-                    _g_logger.info('Valid broadcast received')
+                    _g_logger.info('Valid connection broadcast received')
 
-                    # TODO Extract information from message
-                    # TODO Schedule response
+                    # Extract information from message
+                    net_id = msg.decode_payload(net_pkt.msg_payload)
+                    connection = (net_id, net_pkt.src)
+
+                    # Spawn socket to send data and place into queue
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    sock.setsockopt(socket.SOL_SOCKET,
+                                    socket.SO_REUSEADDR,
+                                    opt_val)
+
+                    outputs.append(sock)
+                    msg_queues[sock] = rx_addr
+
                     # TODO Add device to connections list
                     pass
 
@@ -125,12 +138,23 @@ def __mainloop(server, kill_sock, host_id, host_ip):
 
         # Writable sockets have data ready to send
         for s in writable:
+            # Get data from message queue
+            dst_addr = msg_queues[s]
+
+            # Construct response message
+            resp_type = msg.MsgType.ENDPOINT_CONNECTION_RESPONSE
+            broadcast_msg = msg.construct(resp_type, host_id)
+            serialized_msg = msgprotocol.serialize(broadcast_msg)
+
+            # Construct packet
+            pkt = netpacket.NetPacket(host_ip, dst_addr[0], serialized_msg)
+            serialized_pkt = netprotocol.serialize(pkt)
+
             # Send out data over socket
-            data, addr = msg_queues[s]
-            s.sendto(data, addr)
+            s.sendto(serialized_pkt, dst_addr)
 
             _g_logger.info('Broadcast server sent \'%s\' to \'%s\'',
-                           data, addr)
+                           pkt, dst_addr)
 
             # Cleanup socket data
             s.close()

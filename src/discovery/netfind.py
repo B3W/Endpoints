@@ -80,7 +80,9 @@ def __broadcast(data, src_ip, dst_addr, connection_list):
                     _g_logger.error('Received data is not a valid packet')
 
             # Sanity check correct addressing
-            if valid and (net_pkt.src != dst_addr[0] or net_pkt.dst != src_ip):
+            if valid and (dst_addr[0] != rx_addr[0]
+               or net_pkt.src != dst_addr[0]
+               or net_pkt.dst != src_ip):
                 valid = False
                 _g_logger.error('Received data\'s addressing invalid')
 
@@ -91,7 +93,7 @@ def __broadcast(data, src_ip, dst_addr, connection_list):
 
                 # Extract data from message
                 net_id = msg.decode_payload(net_pkt.msg_payload)
-                connection = (net_id, net_pkt.dst)
+                connection = (net_id, net_pkt.src)
 
                 _g_logger.debug('Extracted NetID from broadcast response: %s',
                                 net_id)
