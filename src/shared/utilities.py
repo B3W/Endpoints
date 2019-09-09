@@ -1,8 +1,10 @@
 '''
-Module providing various utility functions.
+Module providing various shared utility functions and classes.
 '''
+import collections
 import netifaces
 import socket
+import threading
 
 
 def get_broadcast_ips():
@@ -32,7 +34,10 @@ def get_broadcast_ips():
 
 def get_host_ip():
     '''
-    Determines the primary address for host
+    Determines the primary address for host. No internet connection required.
+
+    :returns: Primary IP address for host (xxx.xxx.xxx.xxx)
+              or '127.0.0.1' if it cannot be determined
     '''
     connection_addr = ('10.255.255.255', 1)  # Address for querying host's IP
     sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -52,3 +57,53 @@ def get_host_ip():
         sock.close()
 
     return host_ip
+
+
+class SynchronizedDict(collections.MutableMapping):
+    '''
+    Class representing simple, synchronized dictionary
+    '''
+    def __init__(self, *args, **kwargs):
+        self._map = dict()              # Structure for storing data
+        self.update(dict(*args, **kwargs))
+        self._lock = threading.RLock()  # Access lock
+
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        sync_dict = SynchronizedDict()
+
+        sync_dict._map = dict.fromkeys(iterable, value)
+
+        return sync_dict
+
+    def __getitem__(self, key):
+        with self._lock:
+            item = self._map[key]
+
+        return item
+
+    def __setitem__(self, key, value):
+        with self._lock:
+            self._map[key] = value
+
+    def __delitem__(self, key):
+        with self._lock:
+            del self._map[key]
+
+    def __iter__(self):
+        with self._lock:
+            it = iter(self._map)
+
+        return it
+
+    def __len__(self):
+        with self._lock:
+            length = len(self._map)
+
+        return length
+
+    def __str__(self):
+        with self._lock:
+            s = str(self._map)
+
+        return s
