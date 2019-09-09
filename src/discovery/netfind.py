@@ -11,14 +11,14 @@ import socket
 _g_logger = logging.getLogger(__name__)
 
 
-def __broadcast(data, src_ip, dst_addr, connection_list):
+def __broadcast(data, src_ip, dst_addr, connection_map):
     '''
     Sends out broadcast data to specified socket address
 
     :param data: Message to broadcast
     :param src_ip: IP of host
     :param dst_addr: Address of destination socket
-    :param connection_list: Deque of connected endpoints - mapping (NetID, IP)
+    :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
     '''
     opt_val = 1  # For setting socket options
     recv_buf_sz = 1024  # Max size of received data in bytes
@@ -93,13 +93,12 @@ def __broadcast(data, src_ip, dst_addr, connection_list):
 
                 # Extract data from message
                 net_id = msg.decode_payload(net_pkt.msg_payload)
-                connection = (net_id, net_pkt.src)
 
                 _g_logger.debug('Extracted NetID from broadcast response: %s',
                                 net_id)
 
                 # Add device to connections list
-                connection_list.append(connection)
+                connection_map[net_id] = net_pkt.src
 
                 _g_logger.info('Device appended to connection list')
 
@@ -109,7 +108,7 @@ def __broadcast(data, src_ip, dst_addr, connection_list):
                            dst_addr[0])
 
 
-def execute(port, src_ip, net_id, connection_list):
+def execute(port, src_ip, net_id, connection_map):
     '''
     Executes message broadcasts to all valid network adapters. Blocks until
     all broadcasts have completed.
@@ -117,7 +116,7 @@ def execute(port, src_ip, net_id, connection_list):
     :param port: Destination port to broadcast to
     :param src_ip: Host IP address
     :param net_id: Host's NetID
-    :param connection_list: Deque of connected endpoints - mapping (NetID, IP)
+    :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
     '''
     broadcast_ips = utilities.get_broadcast_ips()  # Check adapter info
     _g_logger.debug('Broadcast IPs: %s', broadcast_ips)
@@ -141,4 +140,4 @@ def execute(port, src_ip, net_id, connection_list):
                             broadcast_msg,
                             src_ip,
                             (ip, port),
-                            connection_list)
+                            connection_map)

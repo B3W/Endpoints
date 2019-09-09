@@ -66,12 +66,15 @@ def __cleanup(inputs, outputs):
         s.close()
 
 
-def __mainloop(server, kill_sock, host_id, host_ip):
+def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting broadcasts
     :param kill_sock: Socket for receiving requests to stop broadcast server
+    :param host_ip: IP address of local machine
+    :param host_id: NetID for local machine used for response messages
+    :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
     '''
     recv_buf_sz = 1024  # Max size of received data in bytes
     opt_val = 1         # For setting socket options
@@ -116,7 +119,6 @@ def __mainloop(server, kill_sock, host_id, host_ip):
 
                     # Extract information from message
                     net_id = msg.decode_payload(net_pkt.msg_payload)
-                    connection = (net_id, net_pkt.src)
 
                     # Spawn socket to send data and place into queue
                     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -127,8 +129,8 @@ def __mainloop(server, kill_sock, host_id, host_ip):
                     outputs.append(sock)
                     msg_queues[sock] = rx_addr
 
-                    # TODO Add device to connections list
-                    pass
+                    # Add device to connections list
+                    connection_map[net_id] = net_pkt.src
 
             elif s is kill_sock:
                 _g_logger.info('Broadcast server received kill signal')
@@ -190,14 +192,15 @@ def __mainloop(server, kill_sock, host_id, host_ip):
     __cleanup(inputs, outputs)
 
 
-def start(port, host_ip, host_id):
+def start(port, host_ip, host_id, connection_map):
     '''
     Starts up broadcast server's mainloop on separate thread
     and returns control to caller.
 
     :param port: Port for broadcast server to listen on
-    :param host_ip: Endpoint NetID for local machine
     :param host_ip: IP address of local machine
+    :param host_id: Endpoint NetID for local machine
+    :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
     '''
     global _g_kill_sock
     global _g_mainloop_thread

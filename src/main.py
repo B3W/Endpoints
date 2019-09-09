@@ -1,7 +1,6 @@
 '''
 Entry point for Enpoints application
 '''
-from collections import deque
 from discovery import netserve, netfind
 import logging
 from network import netid
@@ -56,20 +55,20 @@ if __name__ == '__main__':
     host_ip = utilities.get_host_ip()
     logger.debug('Host IP: %s', host_ip)
 
+    # Initialize map for tracking connected devices - {NetID: IP}
+    endpoint_map = utilities.SynchronizedDict()
+
     # Start UDP listener for connection broadcasts
     rx_port = c.Config.get(c.ConfigEnum.RX_PORT)
     logger.debug('RX Port: %d', rx_port)
 
-    netserve.start(rx_port, host_ip, net_id)
+    netserve.start(rx_port, host_ip, net_id, endpoint_map)
     logger.info('Broadcast server started')
 
-    # Dict of connected and detected Endpoints with mapping (NetID, IP)
-    endpoints = deque()
-
     # Find other endpoints on LAN
-    netfind.execute(rx_port, host_ip, net_id, endpoints)
+    netfind.execute(rx_port, host_ip, net_id, endpoint_map)
     logger.info('Detection of other Endpoints complete')
-    logger.debug('Endpoints: %s', endpoints)
+    logger.debug('Endpoints: %s', endpoint_map)
 
     # FOR TESTING PURPOSES ONLY
     import signal
