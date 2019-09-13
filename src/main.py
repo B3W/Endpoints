@@ -68,8 +68,8 @@ if __name__ == '__main__':
     netserve.start(rx_port, host_ip, net_id, endpoint_map)
     logger.info('Broadcast server started')
 
-    # Find other endpoints on LAN
-    netfind.execute(rx_port, host_ip, net_id, endpoint_map)
+    # Broadcast connection messages over network adapters
+    netfind.execute(rx_port, host_ip, net_id)
     logger.info('Detection of other Endpoints complete')
     logger.debug('Endpoints: %s', endpoint_map)
 
