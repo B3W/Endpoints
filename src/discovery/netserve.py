@@ -103,7 +103,7 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
                     _g_logger.error('Received empty data')
                     continue  # No data read from socket
 
-                # Check for valid packet
+                # Deserialize packet
                 try:
                     net_pkt = netprotocol.deserialize(rx_data)
                 except ValueError:
@@ -115,24 +115,33 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
                     _g_logger.error('Received data\'s addressing invalid')
                     continue  # Invalid address(es)
 
-                if msgprotocol.is_broadcast_response(net_pkt.msg_payload):
+                # Deserialize packet's message
+                try:
+                    pkt_msg = msgprotocol.deserialize(net_pkt.msg_payload)
+                except ValueError:
+                    _g_logger.error('Received message is not valid')
+                    continue  # Invalid message
+
+                if pkt_msg.msg_type \
+                   == msg.MsgType.ENDPOINT_CONNECTION_RESPONSE:
                     # Received response from this Endpoint's
                     # connection broadcast
                     _g_logger.info('Broadcast response received')
 
                     # Extract information from message
-                    net_id = msg.decode_payload(net_pkt.msg_payload)
+                    net_id = msg.decode_payload(pkt_msg)
 
                     # Add device to connections list
                     connection_map[net_id] = net_pkt.src
 
-                elif msgprotocol.is_connect_broadcast(net_pkt.msg_payload):
+                elif (pkt_msg.msg_type
+                      == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST):
                     # Received an initial connection broadcast from
                     # another Endpoint
                     _g_logger.info('Connection broadcast received')
 
                     # Extract information from message
-                    net_id = msg.decode_payload(net_pkt.msg_payload)
+                    net_id = msg.decode_payload(pkt_msg)
 
                     # Spawn socket to send response and place into queue
                     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
