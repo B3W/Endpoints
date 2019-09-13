@@ -61,7 +61,7 @@ def deserialize(byte_data):
 
     msg_len, raw_msg_type, payload = struct.unpack(dynamic_fmt, byte_data)
 
-    return msg.construct(msg.MsgType(raw_msg_type), payload)
+    return msg.Msg(msg.MsgType(raw_msg_type), payload)
 
 
 def __get_raw_msg_type(byte_data):
