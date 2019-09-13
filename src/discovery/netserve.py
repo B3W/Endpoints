@@ -95,6 +95,8 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
             if s is server:
                 # Potential broadcast received
                 rx_data, rx_addr = s.recvfrom(recv_buf_sz)
+                _g_logger.info('Broadcast server received \'%s\' from \'%s\'',
+                               rx_data, rx_addr)
 
                 # Check if data available
                 if not rx_data:
@@ -109,20 +111,30 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
                     continue  # Invalid packet
 
                 # Sanity check IP addressing
-                if net_pkt.src != rx_addr[0] \
-                   or net_pkt.src == host_ip \
-                   or net_pkt.dst != host_ip:
+                if net_pkt.src != rx_addr[0] or net_pkt.src == host_ip:
                     _g_logger.error('Received data\'s addressing invalid')
                     continue  # Invalid address(es)
 
-                # Check if message is appropriate type of broadcast
-                if msgprotocol.is_connect_broadcast(net_pkt.msg_payload):
-                    _g_logger.info('Valid connection broadcast received')
+                if msgprotocol.is_broadcast_response(net_pkt.msg_payload):
+                    # Received response from this Endpoint's
+                    # connection broadcast
+                    _g_logger.info('Broadcast response received')
 
                     # Extract information from message
                     net_id = msg.decode_payload(net_pkt.msg_payload)
 
-                    # Spawn socket to send data and place into queue
+                    # Add device to connections list
+                    connection_map[net_id] = net_pkt.src
+
+                elif msgprotocol.is_connect_broadcast(net_pkt.msg_payload):
+                    # Received an initial connection broadcast from
+                    # another Endpoint
+                    _g_logger.info('Connection broadcast received')
+
+                    # Extract information from message
+                    net_id = msg.decode_payload(net_pkt.msg_payload)
+
+                    # Spawn socket to send response and place into queue
                     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     sock.setsockopt(socket.SOL_SOCKET,
                                     socket.SO_REUSEADDR,
@@ -227,7 +239,7 @@ def start(port, host_ip, host_id, connection_map):
 
     server.bind(server_addr)
 
-    _g_logger.info('UDP server port created and configured')
+    _g_logger.info('UDP broadcast server socket created and configured')
 
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
