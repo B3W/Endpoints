@@ -70,8 +70,7 @@ if __name__ == '__main__':
 
     # Broadcast connection messages over network adapters
     netfind.execute(rx_port, host_ip, net_id)
-    logger.info('Detection of other Endpoints complete')
-    logger.debug('Endpoints: %s', endpoint_map)
+    logger.info('Connection message broadcasting complete')
 
     # FOR TESTING PURPOSES ONLY
     import signal
@@ -89,6 +88,10 @@ if __name__ == '__main__':
 
     while not done:
         sleep(1.0)
+
+    logger.debug('Connected Endpoints at time of exit: %s', endpoint_map)
+    print('Endpoints connected to at time of exit')
+    print(endpoint_map)
 
     signal.signal(signal.SIGINT, signal.default_int_handler)
 
