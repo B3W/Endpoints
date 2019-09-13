@@ -66,12 +66,12 @@ def __cleanup(inputs, outputs):
         s.close()
 
 
-def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
+def __mainloop(server, rx_port, host_ip, host_id, connection_map):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting broadcasts
-    :param kill_sock: Socket for receiving requests to stop broadcast server
+    :param rx_port: Port broadcast servers are listening over
     :param host_ip: IP address of local machine
     :param host_id: NetID for local machine used for response messages
     :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
@@ -81,8 +81,8 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
     recv_buf_sz = 1024  # Max size of received data in bytes
     opt_val = 1         # For setting socket options
     done = False        # Flag indicating server mainloop should stop
-    inputs = [server, kill_sock]    # Sockets to read
-    outputs = []                    # Sockets to write
+    inputs = [server, _g_recv_kill_sock]    # Sockets to read
+    outputs = []                            # Sockets to write
     msg_queues = {}     # Holds data to send with mapping {socket:(data,addr)}
 
     while inputs and not done:
@@ -94,6 +94,7 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
         for s in readable:
             if s is server:
                 # Potential broadcast received
+                # rx_addr will be sending Endpoint's socket address
                 rx_data, rx_addr = s.recvfrom(recv_buf_sz)
                 _g_logger.info('Broadcast server received \'%s\' from \'%s\'',
                                rx_data, rx_addr)
@@ -144,19 +145,22 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
                     # Extract information from message
                     net_id = msg.decode_payload(pkt_msg)
 
-                    # Spawn socket to send response and place into queue
+                    # Spawn socket to send response and place into output list
                     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     sock.setsockopt(socket.SOL_SOCKET,
                                     socket.SO_REUSEADDR,
                                     opt_val)
 
                     outputs.append(sock)
+
+                    # Add socket with destination address to message queue
+                    dst_addr = (rx_addr, )
                     msg_queues[sock] = rx_addr
 
                     # Add device to connections list
                     connection_map[net_id] = net_pkt.src
 
-            elif s is kill_sock:
+            elif s is _g_recv_kill_sock:
                 _g_logger.info('Broadcast server received kill signal')
 
                 done = True  # End server after this iteration of mainloop
@@ -216,32 +220,36 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
     __cleanup(inputs, outputs)
 
 
-def start(port, host_ip, host_id, connection_map):
+def start(rx_port, host_ip, host_id, connection_map):
     '''
     Starts up broadcast server's mainloop on separate thread
     and returns control to caller.
 
-    :param port: Port for broadcast server to listen on
+    :param rx_port: Port for broadcast server to listen on
     :param host_ip: IP address of local machine
     :param host_id: Endpoint NetID for local machine
     :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
     '''
     global _g_kill_sock
+    global _g_recv_kill_sock
     global _g_mainloop_thread
 
     opt_val = 1  # For setting socket options
 
     # Create/Configure TCP socket pair for returning control from 'select'
-    _g_kill_sock, recv_kill_sock = socket.socketpair(family=socket.AF_INET)
+    _g_kill_sock, _g_recv_kill_sock = socket.socketpair(family=socket.AF_INET)
 
     _g_kill_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
-    recv_kill_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
-    recv_kill_sock.setblocking(False)
+    _g_recv_kill_sock.setsockopt(socket.SOL_SOCKET,
+                                 socket.SO_REUSEADDR,
+                                 opt_val)
+
+    _g_recv_kill_sock.setblocking(False)
 
     _g_logger.info('Dummy TCP socket pair created and configured')
 
     # Create and configure UDP server socket to receive UDP broadcasts
-    server_addr = ('', port)  # Listen on all interfaces
+    server_addr = ('', rx_port)  # Listen on all interfaces
 
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
@@ -254,7 +262,7 @@ def start(port, host_ip, host_id, connection_map):
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
                                           args=(server,
-                                                recv_kill_sock,
+                                                rx_port,
                                                 host_ip,
                                                 host_id,
                                                 connection_map))
