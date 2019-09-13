@@ -154,8 +154,8 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
                     outputs.append(sock)
 
                     # Add socket with destination address to message queue
-                    dst_addr = (rx_addr, )
-                    msg_queues[sock] = rx_addr
+                    dst_addr = (rx_addr, rx_port)
+                    msg_queues[sock] = dst_addr
 
                     # Add device to connections list
                     connection_map[net_id] = net_pkt.src
