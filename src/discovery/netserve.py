@@ -111,6 +111,7 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
                     continue  # Invalid packet
 
                 # Sanity check IP addressing
+                # Destination address in packet will be broadcast address
                 if net_pkt.src != rx_addr[0] or net_pkt.src == host_ip:
                     _g_logger.error('Received data\'s addressing invalid')
                     continue  # Invalid address(es)
@@ -254,7 +255,7 @@ def start(port, host_ip, host_id, connection_map):
     _g_mainloop_thread = threading.Thread(target=__mainloop,
                                           args=(server,
                                                 recv_kill_sock,
-                                                host_id,
                                                 host_ip,
+                                                host_id,
                                                 connection_map))
     _g_mainloop_thread.start()
