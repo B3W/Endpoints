@@ -76,6 +76,8 @@ def __mainloop(server, kill_sock, host_ip, host_id, connection_map):
     :param host_id: NetID for local machine used for response messages
     :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
     '''
+    _g_logger.info('Broadcast server\'s mainloop started')
+
     recv_buf_sz = 1024  # Max size of received data in bytes
     opt_val = 1         # For setting socket options
     done = False        # Flag indicating server mainloop should stop
@@ -232,7 +234,6 @@ def start(port, host_ip, host_id, connection_map):
                                           args=(server,
                                                 recv_kill_sock,
                                                 host_id,
-                                                host_ip))
+                                                host_ip,
+                                                connection_map))
     _g_mainloop_thread.start()
-
-    _g_logger.info('Broadcast server\'s mainloop started')
