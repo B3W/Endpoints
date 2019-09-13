@@ -14,19 +14,25 @@ def get_broadcast_ips():
     :returns: List of broadcasting IP addresses (xxx.xxx.xxx.xxx)
     '''
     broadcast_ips = []  # IP addresses for broadcasting
-    skip_list = ['127.0.0.1']  # Adapter addresses to skip over
+    interface_skip_list = ['127.0.0.1']  # Adapter addresses to skip over
 
     # Search through network adapters
     for adapter in netifaces.interfaces():
-        # Get AF_INET adapter info (list of dicts of addresses)
-        af_inet_info = netifaces.ifaddresses(adapter)[netifaces.AF_INET]
+        # Get info from network interfaces for the INET address family
+        # Info in the form -> list of dicts of addresses
+        try:
+            af_inet_info = netifaces.ifaddresses(adapter)[netifaces.AF_INET]
+        except KeyError:
+            # Interface has no info for INET address family, skip
+            continue
 
         for addr_dict in af_inet_info:
             # Check AF_INET info for broadcasting address
             try:
-                if addr_dict['addr'] not in skip_list:
+                if addr_dict['addr'] not in interface_skip_list:
                     broadcast_ips.append(addr_dict['broadcast'])
             except KeyError:
+                # No interface or broadcast address, skip
                 pass
 
     return broadcast_ips
