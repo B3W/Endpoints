@@ -117,15 +117,15 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
                     _g_logger.error('Received data\'s addressing invalid')
                     continue  # Invalid address(es)
 
-                # Deserialize packet's message
-                try:
-                    pkt_msg = msgprotocol.deserialize(net_pkt.msg_payload)
-                except ValueError:
-                    _g_logger.error('Received message is not valid')
+                # Determine the message type of the packet's payload
+                pkt_msg = net_pkt.msg_payload
+                msg_type = msgprotocol.decode_msgtype(pkt_msg)
+
+                if msg_type is None:
+                    _g_logger.error('Packet contained invalid payload')
                     continue  # Invalid message
 
-                if pkt_msg.msg_type \
-                   == msg.MsgType.ENDPOINT_CONNECTION_RESPONSE:
+                if msg_type == msg.MsgType.ENDPOINT_CONNECTION_RESPONSE:
                     # Received response from this Endpoint's
                     # connection broadcast
                     _g_logger.info('Broadcast response received')
@@ -136,8 +136,7 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
                     # Add device to connections list
                     connection_map[net_id] = net_pkt.src
 
-                elif (pkt_msg.msg_type
-                      == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST):
+                elif msg_type == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST:
                     # Received an initial connection broadcast from
                     # another Endpoint
                     _g_logger.info('Connection broadcast received')
