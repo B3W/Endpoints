@@ -98,6 +98,9 @@ def construct(msg_type, payload):
 def decode_payload(message):
     '''
     Returns the payload decoded to the correct object
+
+    :param message: Msg object to decode the payload
+    :return: Msg's decoded payload
     '''
     if message.msg_type in CONNECTION_MSG_TYPES:
         # Payload is a NetID object

@@ -71,7 +71,7 @@ def __get_raw_msg_type(byte_data):
     :param byte_data: Bytes representing message
     :returns: Raw message type as integer
     '''
-    # Message type location within bytes
+    # Message type location within byte data
     msg_type_start = g_LEN_PREF_SZ_BYTES
     msg_type_end = g_LEN_PREF_SZ_BYTES + g_MSG_TYPE_SZ_BYTES
 
@@ -109,61 +109,19 @@ def is_valid_msg(byte_data):
     return valid
 
 
-def is_connect_broadcast(byte_data):
+def decode_msgtype(byte_data):
     '''
-    Checks whether or not bytes represent a connection broadcast message
+    Determines the MsgType of the message represented by byte data
 
     :param byte_data: Bytes to check
-    :returns: True if bytes are broadcast connect message, False otherwise
+    :returns: MsgType if bytes valid message, None otherwise
     '''
-    is_msg_type = False
+    msg_type = None
 
     if is_valid_msg(byte_data):
-        # Check if message is a connection broadcast
         msg_type = msg.MsgType(__get_raw_msg_type(byte_data))
 
-        if msg_type == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST:
-            is_msg_type = True
-
-    return is_msg_type
-
-
-def is_disconnection(byte_data):
-    '''
-    Checks whether or not bytes represent a disconnection message
-
-    :param byte_data: Bytes to check
-    :returns: True if bytes are disconnect message, False otherwise
-    '''
-    is_msg_type = False
-
-    if is_valid_msg(byte_data):
-        # Check if message is a connection broadcast
-        msg_type = msg.MsgType(__get_raw_msg_type(byte_data))
-
-        if msg_type == msg.MsgType.ENDPOINT_DISCONNECTION:
-            is_msg_type = True
-
-    return is_msg_type
-
-
-def is_broadcast_response(byte_data):
-    '''
-    Checks whether or not bytes represent a broadcast response message
-
-    :param byte_data: Bytes to check
-    :returns: True if bytes are broadcast response message, False otherwise
-    '''
-    is_msg_type = False
-
-    if is_valid_msg(byte_data):
-        # Check if message is a connection broadcast
-        msg_type = msg.MsgType(__get_raw_msg_type(byte_data))
-
-        if msg_type == msg.MsgType.ENDPOINT_CONNECTION_RESPONSE:
-            is_msg_type = True
-
-    return is_msg_type
+    return msg_type
 
 
 # Unit Testing
@@ -189,21 +147,8 @@ def test():
     if not is_valid_msg(serialized_msg):
         raise ValueError('Unable to validate message during testing')
 
-    if is_connect_broadcast(serialized_msg):
-        print('Broadcast Connection!')
-    else:
-        print('Non Broadcast Connection')
-
-    if is_disconnection(serialized_msg):
-        print('Broadcast Disconnection!')
-    else:
-        print('Non Broadcast Disconnection')
-
-    if is_broadcast_response(serialized_msg):
-        print('Broadcast Connection Response!')
-    else:
-        print('Non Broadcast Response')
-
+    msg_type = decode_msgtype(serialized_msg)
+    print('Decoded MsgType: %s' % (msg_type))
     print()
 
     # Deserialize message
