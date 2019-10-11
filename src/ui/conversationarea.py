@@ -1,88 +1,8 @@
 '''
 '''
-import autoscrollbar as asb
+import messagearea as ma
 import tkinter as tk
 from tkinter import ttk
-
-
-class MessageFrame(ttk.Frame):
-    '''
-    UI element displaying the actual messages
-    '''
-    _SENT_COL = 1
-    _SENT_STICKY = (tk.E,)  # Side for sent messages to appear in msg frame
-    _RECV_COL = 0
-    _RECV_STICKY = (tk.W,)  # Side for received messages to appear in msg frame
-
-    def __init__(self, master, host_id, *args, **kwargs):
-        '''
-        Initializes the MessageFrame
-
-        :param master: The container holding this frame
-        :param host_id: Unique id for the host running the application
-        '''
-        self.host_id = host_id
-        self.num_msgs = 0  # Number of messages displayed
-
-        # Initialize frame holding Canvas
-        ttk.Frame.__init__(self, master, *args, **kwargs)
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=0)
-        self.rowconfigure(0, weight=1)
-
-        # Initialize Canvas to hold 'scrollable' frame
-        self.canvas = tk.Canvas(self, bg='red')
-        self.canvas.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
-
-        # Initialize vertical AutoScrollbar and link to the Canvas
-        self.vsb = asb.AutoScrollbar(self,
-                                     column=1, row=0,
-                                     orient=tk.VERTICAL,
-                                     command=self.canvas.yview)
-
-        self.canvas.configure(yscrollcommand=self.vsb.set)
-
-        # Initialize 'scrollable' frame for actual message content
-        self.msg_frame = ttk.Frame(self.canvas)
-        self.msg_frame.columnconfigure(0, weight=1)
-        self.msg_frame.columnconfigure(1, weight=1)
-
-        canvas_win_location = (0, 0)
-        self.canvas_frame_id = self.canvas.create_window(canvas_win_location,
-                                                         window=self.msg_frame,
-                                                         anchor='nw')
-
-        # Bind callbacks for when the Canvas is resized
-        self.msg_frame.bind('<Configure>', self.__update_scrollregion)
-        self.canvas.bind('<Configure>', self.__on_canvas_configure)
-
-    def add_message(self, msg, sender_id):
-        if not msg:
-            # Ignore empty messages
-            return
-
-        label = ttk.Label(self.msg_frame, text=msg)
-
-        if sender_id == self.host_id:
-            # The host sent this message
-            label.grid(column=MessageFrame._SENT_COL,
-                       row=self.num_msgs,
-                       sticky=MessageFrame._SENT_STICKY)
-
-        else:
-            # Someone other than the host sent the message
-            label.grid(column=MessageFrame._RECV_COL,
-                       row=self.num_msgs,
-                       sticky=MessageFrame._RECV_STICKY)
-
-        self.num_msgs += 1
-
-    def __on_canvas_configure(self, event):
-        new_canvas_width = event.width
-        self.canvas.itemconfigure(self.canvas_frame_id, width=new_canvas_width)
-
-    def __update_scrollregion(self, event=None):
-        self.canvas.configure(scrollregion=self.canvas.bbox(tk.ALL))
 
 
 class ConversationArea(ttk.Frame):
@@ -95,9 +15,14 @@ class ConversationArea(ttk.Frame):
     _MSG_FRAME_X_PAD = (20, 20)  # 'X' pad around msg frame
     _MSG_FRAME_Y_PAD = (10, 10)  # 'Y' pad around msg frame
 
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, master, host_id, *args, **kwargs):
+        '''
+        :param master: The container holding this frame
+        :param host_id: Unique id for the host running the application
+        '''
         # Initialize frame
         ttk.Frame.__init__(self, master, *args, **kwargs)
+        self.host_id = host_id
 
         # Configure frame's grid
         self.columnconfigure(0, weight=1)
@@ -108,13 +33,18 @@ class ConversationArea(ttk.Frame):
         # MessageFrame for holding the actual messages.
         # NOTE  MessageFrames are only for displaying the messages. All info
         #       relevant to the messages/conversation is tracked elsewhere
-        self.msg_display = MessageFrame(self, 'dummy_id')
+        self.msg_display = ma.MessageFrame(self)
 
         # Entry area for entering a new message
+        # TODO Change to Text widget for multiline/non-text
         self.msg_entry = ttk.Entry(self)
+        self.msg_entry.bind('<Return>', self.send_message)
 
         # Send button for sending the content in the message entry
-        self.msg_send = ttk.Button(self, text='Send')
+        self.msg_send = ttk.Button(self, text='Send',
+                                   command=self.send_message)
+
+        self.msg_send.bind('<Return>', self.send_message)
 
         # Place widgets
         self.msg_display.grid(column=0, row=0, columnspan=2,
@@ -136,4 +66,14 @@ class ConversationArea(ttk.Frame):
             if (i % 5) == 0:
                 sender_id = 'dummy_id'
 
-            self.msg_display.add_message('item %d' % i, sender_id)
+            self.msg_display.add_message('item %d' % i,
+                                         sender_id == self.host_id)
+
+    # CALLBACKS
+    def send_message(self, event=None):
+        msg = self.msg_entry.get().strip()
+
+        # Ignore empty messages
+        if msg:
+            self.msg_display.add_message(msg, is_host=True)
+            self.msg_entry.delete(0, tk.END)  # Clear entry on send
