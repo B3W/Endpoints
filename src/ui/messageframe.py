@@ -19,12 +19,14 @@ class MessageFrame(ttk.Frame):
 
     _MOUSEWHEEL_EVENT = '<MouseWheel>'  # Event to bind for mouse wheel scrolls
 
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, master, host_id, *args, **kwargs):
         '''
         Initializes the MessageFrame
 
         :param master: The container holding this frame
+        :param host_id: Unique id for the host running the application
         '''
+        self.host_id = host_id
         self.num_msgs = 0  # Number of messages displayed
 
         # Initialize frame holding Canvas
@@ -64,7 +66,7 @@ class MessageFrame(ttk.Frame):
         self.msg_frame.bind('<Enter>', self.__bind_mousewheel)
         self.msg_frame.bind('<Leave>', self.__unbind_mousewheel)
 
-    def add_text_message(self, text, timestamp, is_host):
+    def add_text_message(self, ident, timestamp, text):
         if not text:
             # Ignore empty messages
             return
@@ -72,7 +74,7 @@ class MessageFrame(ttk.Frame):
         text_msg = m.Message(self.msg_frame, timestamp)
         text_msg.set_text(text)
 
-        if is_host:
+        if ident == self.host_id:
             # The host sent this message
             text_msg.grid(column=0, row=self.num_msgs,
                           sticky=MessageFrame._SENT_STICKY,
