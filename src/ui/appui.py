@@ -1,6 +1,7 @@
 import conversationframe as cf
 import menubar as mb
-import shared
+from shared import timeutils as tu
+from shared import queueprotocol as qp
 import sidebar as sb
 import tkinter as tk
 from tkinter import ttk
@@ -57,8 +58,8 @@ class EndpointUI(ttk.Frame):
         # Check for a message in the reception queue
         try:
             queue_item = self.recv_q.get_nowait()  # Get and decode msg
-            ident, unfmt_ts, msg = shared.decode(queue_item)
-            ts = shared.format_timestamp(unfmt_ts)
+            ident, iso_ts, msg = qp.decode(queue_item)
+            ts = tu.format_timestamp(iso_ts)
 
             self.conversation.add_text_message(ident, ts, msg)  # Send to UI
             self.recv_q.task_done()  # Mark complete
