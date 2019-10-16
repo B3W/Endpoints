@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 from message import msg, msgprotocol
 from network import netpacket, netprotocol
-from shared import utilities
+from shared import netutils
 import socket
 
 _g_logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def execute(port, src_ip, net_id):
     :param src_ip: Host IP address
     :param net_id: Host's NetID
     '''
-    broadcast_ips = utilities.get_broadcast_ips()  # Check adapter info
+    broadcast_ips = netutils.get_broadcast_ips()  # Check adapter info
     _g_logger.debug('Broadcast IPs: %s', broadcast_ips)
 
     # Sanity check that network adapters are available for broadcasting

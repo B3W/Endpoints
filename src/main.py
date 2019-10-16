@@ -8,7 +8,8 @@ from network import netid
 import os
 import platform
 from shared import config as c
-from shared import utilities
+from shared import netutils
+from shared import synceddict as sd
 
 if __name__ == '__main__':
     # Get path to this module
@@ -55,11 +56,11 @@ if __name__ == '__main__':
     logger.debug('NetID: %s', net_id)
 
     # Retrieve host's IP
-    host_ip = utilities.get_host_ip()
+    host_ip = netutils.get_host_ip()
     logger.debug('Host IP: %s', host_ip)
 
     # Initialize map for tracking connected devices - {NetID: IP}
-    endpoint_map = utilities.SynchronizedDict()
+    endpoint_map = sd.SyncedDict()
 
     # Start UDP listener for connection broadcasts
     rx_port = c.Config.get(c.ConfigEnum.RX_PORT)
