@@ -83,8 +83,8 @@ class ConversationFrame(ttk.Frame):
             ts = shared.get_timestamp()
             encoded_msg = shared.encode(self.host_id, ts, msg)
 
-            # Push into sending queue
             try:
+                # Push into sending queue
                 self.send_q.put_nowait(encoded_msg)
 
                 # Display

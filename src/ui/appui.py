@@ -50,10 +50,10 @@ class EndpointUI(ttk.Frame):
                                sticky=(tk.N, tk.S, tk.E, tk.W))
 
         # Begin polling of reception queue
-        self.__msg_poll()
+        self.__recv_msg_poll()
 
     # CALLBACKS
-    def __msg_poll(self):
+    def __recv_msg_poll(self):
         # Check for a message in the reception queue
         try:
             queue_item = self.recv_q.get_nowait()  # Get and decode msg
@@ -68,4 +68,4 @@ class EndpointUI(ttk.Frame):
 
         # Register callback to poll queue again. Track ID for cancelling
         self.mpoll_id = self.after(EndpointUI._MSG_POLL_DELAY_MS,
-                                   self.__msg_poll)
+                                   self.__recv_msg_poll)
