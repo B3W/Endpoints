@@ -2,7 +2,8 @@
 '''
 import messageframe as mf
 import queue
-import shared
+from shared import timeutils as tu
+from shared import queueprotocol as qp
 import tkinter as tk
 from tkinter import ttk
 
@@ -120,15 +121,15 @@ class ConversationFrame(ttk.Frame):
 
         if msg:
             # Construct message to send
-            ts = shared.get_timestamp()
-            encoded_msg = shared.text_encode(self.host_id, ts, msg)
+            ts = tu.get_timestamp()
+            encoded_msg = qp.text_encode(self.host_id, ts, msg)
 
             try:
                 # Push into sending queue
                 self.send_q.put_nowait(encoded_msg)
 
                 # Display
-                fmt_ts = shared.format_timestamp(ts)
+                fmt_ts = tu.format_timestamp(ts)
 
                 active_frame = self.conversations[self.active_conversation]
                 active_frame.add_text_message(self.host_id, fmt_ts, msg)

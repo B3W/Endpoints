@@ -1,6 +1,7 @@
 import conversationframe as cf
 import menubar as mb
-import shared
+from shared import timeutils as tu
+from shared import queueprotocol as qp
 import sidebar as sb
 import tkinter as tk
 from tkinter import ttk
@@ -71,7 +72,7 @@ class EndpointUI(ttk.Frame):
         try:
             # Retrieve and decode connection from queue
             queue_item = conn_q.get_nowait()
-            ident, name = shared.conn_decode(queue_item)
+            ident, name = qp.conn_decode(queue_item)
 
             # Report connection to Sidebar and ConversationFrame
             self.side_panel.report_connection(ident, name)
@@ -92,8 +93,8 @@ class EndpointUI(ttk.Frame):
         try:
             # Retrieve and decode message from queue
             queue_item = recv_q.get_nowait()
-            ident, unfmt_ts, msg = shared.text_decode(queue_item)
-            ts = shared.format_timestamp(unfmt_ts)
+            ident, unfmt_ts, msg = qp.text_decode(queue_item)
+            ts = tu.format_timestamp(unfmt_ts)
 
             # Report message to the ConversationFrame
             self.convo_mgr.report_text_message(ident, ts, msg)
