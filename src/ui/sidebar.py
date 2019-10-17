@@ -7,17 +7,26 @@ from tkinter import ttk
 
 
 class SideBar(ttk.Frame):
-    '''
-    UI object representing the side panel
-    '''
-    def __init__(self, master, *args, **kwargs):
+    '''UI element representing the side panel'''
+    def __init__(self, master,
+                 add_callback, activate_callback, remove_callback,
+                 *args, **kwargs):
         '''
         Initializes the SideBar
 
         :param master: Master widget that SideBar is child of
+        :param add_callback: Adds conversation to ConversationFrame
+        :param activate_callback: Activates conversation in ConversationFrame
+        :param remove_callback: Deletes conversation from ConversationFrame
         '''
         ttk.Frame.__init__(self, master, *args, **kwargs)  # Init root frame
-        self.pack(fill=tk.BOTH)  # Space for widgets to occupy
+
+        self.add_callback = add_callback
+        self.activate_callback = activate_callback
+        self.remove_callback = remove_callback
+
+        # Dictionary tracking connections with mapping -> {name: ident}
+        self.connections = {}
 
         # Root frame grid
         self.columnconfigure(0, weight=1)  # Listbox col
@@ -46,49 +55,64 @@ class SideBar(ttk.Frame):
         self._vscroll.config(command=self.listbox.yview)
         self._hscroll.config(command=self.listbox.xview)
 
-    def append(self, items):
-        '''
-        Append 'items' to the end
+        self.listbox.bind('<<ListboxSelect>>', self.__on_connection_select)
 
-        :param items: String or iterable of strings to append
+    def report_connection(self, ident, conn_name):
         '''
-        self.listbox.insert(tk.END, items)
+        Append connection to end of list
 
-    def insert(self, pos, items):
+        :param ident: ID of connection to append
+        :param conn: Friendly name to append
         '''
-        Insert 'items' starting at 'pos'
+        # Initialize conversation for ConversationFrame
+        self.add_callback(ident)
 
-        :param pos: Index to start insertion at
-        :param items: String or iterable of strings to insert
+        # Add connection to sidebar
+        self.connections[conn_name] = ident
+        self.listbox.insert(tk.END, conn_name)
+
+    def remove_connection(self, ident):
         '''
-        self.listbox.insert(pos, items)
+        Remove connection with ID 'ident' if it exists.
 
-    def remove_item(self, item):
+        :param ident: ID of connection to remove
         '''
-        Remove 'item' if it exists. Only the first occurence of 'item'
-        will be removed
-
-        :param item: String to remove
-        '''
-        cur_items = self.listbox.get(0, tk.END)
-
         try:
-            item_index = cur_items.index(item)
-            self.remove_range(item_index)
+            # Get the name associated with the ID
+            keys = self.connections.keys()
+            conn_name = keys[list(self.connections.values).index(ident)]
 
         except ValueError:
-            # 'item' not found in listbox
+            # ID not found
+            return
+
+        try:
+            item_index = self.listbox.get(0, tk.END).index(conn_name)
+
+            # Remove connection from sidebar
+            del self.connections[conn_name]
+            self.listbox.delete(item_index)
+
+            # Remove conversation from ConversationFrame
+            self.remove_callback(ident)
+
+        except ValueError:
+            # Connection not found
             pass
 
-    def remove_range(self, start, end=None):
-        '''
-        Remove items from 'start' to 'end' (inclusive). Omit 'end' to only
-        remove the item at index 'start'.
+    # CALLBACKS
+    def __on_connection_select(self, event):
+        widget = event.widget
 
-        :param start: Index to begin removal
-        :param end: Index to end removal
-        '''
-        if end:
-            self.listbox.delete(start, end)
-        else:
-            self.listbox.delete(start)
+        try:
+            # Determine connection to activate
+            index = int(widget.curselection()[0])
+            conn_name = widget.get(index)
+
+            # Notify ConversationFrame of activation
+            conn_ident = self.connections[conn_name]
+            self.activate_callback(conn_ident)
+
+        except IndexError:
+            # 'curselection' returned empty list
+            pass

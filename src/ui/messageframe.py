@@ -8,9 +8,7 @@ from tkinter import ttk
 
 
 class MessageFrame(ttk.Frame):
-    '''
-    UI element displaying the messages
-    '''
+    '''UI element displaying the messages of conversation'''
     _SENT_X_PAD = (40, 10)  # 'X' pad for sent msg (l-pad, r-pad)
     _SENT_STICKY = tk.E  # Side for sent messages to appear in msg frame
     _RECV_X_PAD = (10, 40)  # 'X' pad for recv msg (l-pad, r-pad)
@@ -18,15 +16,14 @@ class MessageFrame(ttk.Frame):
     _MSG_Y_PAD = (20, 0)  # 'Y' pad for all msg (t-pad, b-pad)
 
     _MOUSEWHEEL_EVENT = '<MouseWheel>'  # Event to bind for mouse wheel scrolls
+    host_id = b''  # Universal host ID of the running Endpoint
 
-    def __init__(self, master, host_id, *args, **kwargs):
+    def __init__(self, master, *args, **kwargs):
         '''
         Initializes the MessageFrame
 
         :param master: The container holding this frame
-        :param host_id: Unique id for the host running the application
         '''
-        self.host_id = host_id
         self.num_msgs = 0  # Number of messages displayed
 
         # Initialize frame holding Canvas
@@ -74,7 +71,7 @@ class MessageFrame(ttk.Frame):
         text_msg = m.Message(self.msg_frame, timestamp)
         text_msg.set_text(text)
 
-        if ident == self.host_id:
+        if ident == MessageFrame.host_id:
             # The host sent this message
             text_msg.grid(column=0, row=self.num_msgs,
                           sticky=MessageFrame._SENT_STICKY,
