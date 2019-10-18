@@ -10,9 +10,9 @@ import queue
 
 class EndpointUI(ttk.Frame):
     '''Top-level container for Endpoint UI'''
-    # NOTE  Race condition where if message is sent to connection before the
-    #       connection queue has been polled message will be dropped
-    _CONN_POLL_DELAY_MS = 500   # How often to poll connection queue
+    # NOTE  Possible race condition where if message is sent to connection
+    #        before connection queue has been polled message will be dropped
+    _CONN_POLL_DELAY_MS = 250   # How often to poll connection queue
     _MSG_POLL_DELAY_MS = 250    # How often to poll received message queue
 
     def __init__(self,

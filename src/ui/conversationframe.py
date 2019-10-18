@@ -119,7 +119,7 @@ class ConversationFrame(ttk.Frame):
     def __send_text_message(self, event=None):
         msg = self.msg_entry.get().strip()
 
-        if msg:
+        if self.active_conversation and msg:
             # Construct message to send
             ts = tu.get_timestamp()
             encoded_msg = qp.text_encode(self.host_id, ts, msg)
