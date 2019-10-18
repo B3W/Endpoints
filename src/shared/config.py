@@ -8,11 +8,10 @@ import os
 
 @enum.unique
 class ConfigEnum(enum.Enum):
-    '''
-    Enumeration providing friendly names for configurations
-    '''
+    '''Enum providing friendly names for configurations'''
     RX_PORT = enum.auto()
     BYTE_ENCODING = enum.auto()
+    ENDPOINT_GUID = enum.auto()
     ENDPOINT_NAME = enum.auto()
 
 
@@ -21,14 +20,13 @@ class ConfigEnum(enum.Enum):
 KEY_MAP = {
     ConfigEnum.RX_PORT: 'receive_port',
     ConfigEnum.BYTE_ENCODING: 'byte_encoding',
+    ConfigEnum.ENDPOINT_GUID: 'endpoint_guid',
     ConfigEnum.ENDPOINT_NAME: 'endpoint_name'
 }
 
 
 class Config(object):
-    '''
-    Class holding application's configuration
-    '''
+    '''Object holding application's configuration'''
     # Default absolute path to the configuration file
     _config_file_path = os.path.abspath('config.json')
     # Handle for holding configuration data
