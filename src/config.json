@@ -2,5 +2,6 @@
     "connection_port": 3434,
     "byte_encoding": "utf-8",
     "endpoint_guid": "",
-    "endpoint_name": ""
+    "endpoint_name": "",
+    "message_port": 3435
 }
