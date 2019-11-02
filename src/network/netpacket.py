@@ -12,8 +12,8 @@ class NetPacket(object):
         """
         'Constructor' for NetPacket
 
-        :param endpoint_src: Source node IP
-        :param endpoint_dst: Destination node IP
+        :param endpoint_src: Source node GUID as int
+        :param endpoint_dst: Destination node GUID as int
         :param msg_payload: Encoded message to send
         """
         self.src = endpoint_src
@@ -43,8 +43,8 @@ class NetPacket(object):
 def test():
     from network import netid
 
-    src_id = netid.NetID('192.168.1.100')
-    dst_id = netid.NetID('192.168.1.101')
+    src_id = netid.NetID('NAME-x')
+    dst_id = netid.NetID('NAME-y')
     payload = 'this is a packet payload'.encode('utf-8')
 
     pkt = NetPacket(src_id, dst_id, payload)
