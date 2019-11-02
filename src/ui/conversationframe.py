@@ -122,11 +122,11 @@ class ConversationFrame(ttk.Frame):
         if self.active_conversation and msg:
             # Construct message to send
             ts = tu.get_timestamp()
-            encoded_msg = qp.text_encode(self.host_id, ts, msg)
+            msg = qp.TextMsg(self.host_id, ts, msg)
 
             try:
                 # Push into sending queue
-                self.send_q.put_nowait(encoded_msg)
+                self.send_q.put_nowait(msg)
 
                 # Display
                 fmt_ts = tu.format_timestamp(ts)
