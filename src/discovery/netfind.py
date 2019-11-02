@@ -12,21 +12,23 @@ import socket
 _g_logger = logging.getLogger(__name__)
 
 
-def __broadcast(data, src_ip, dst_addr):
+def __broadcast(data, src_id, dst_addr):
     '''
     Sends out broadcast data to specified socket address
 
     :param data: Message to broadcast
-    :param src_ip: IP of host
+    :param src_id: GUID of host
     :param dst_addr: Address of destination socket
     '''
     opt_val = 1  # For setting socket options
 
     # Construct netpacket
     serialized_msg = msgprotocol.serialize(data)
-    pkt = netpacket.NetPacket(src_ip, dst_addr[0], serialized_msg)
-    serialized_pkt = netprotocol.serialize(pkt)
 
+    dst_id = netprotocol.g_GUID_SZ_BYTES * b'\x00'
+    pkt = netpacket.NetPacket(src_id, dst_id, serialized_msg)
+
+    serialized_pkt = netprotocol.serialize(pkt)
     _g_logger.debug('Constructed broadcasting packet: %s', serialized_pkt)
 
     # Create/Configure UDP socket for broadcasting
@@ -52,13 +54,13 @@ def __broadcast(data, src_ip, dst_addr):
         _g_logger.info('Broadcast sent')
 
 
-def execute(port, src_ip, net_id):
+def execute(port, src_guid, net_id):
     '''
     Executes message broadcasts to all valid network adapters. Blocks until
     all broadcasts have been sent out.
 
     :param port: Destination port to broadcast to
-    :param src_ip: Host IP address
+    :param src_guid: Host GUID
     :param net_id: Host's NetID
     '''
     broadcast_ips = netutils.get_broadcast_ips()  # Check adapter info
@@ -79,4 +81,4 @@ def execute(port, src_ip, net_id):
     # Send out broadcasts
     with ThreadPoolExecutor(max_workers=num_broadcast_ips) as executor:
         for ip in broadcast_ips:
-            executor.submit(__broadcast, broadcast_msg, src_ip, (ip, port))
+            executor.submit(__broadcast, broadcast_msg, src_guid, (ip, port))

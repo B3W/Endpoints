@@ -66,15 +66,15 @@ def __cleanup(inputs, outputs):
         s.close()
 
 
-def __mainloop(server, rx_port, host_ip, host_id, connection_map):
+def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting broadcasts
-    :param rx_port: Port broadcast servers are listening over
-    :param host_ip: IP address of local machine
-    :param host_id: NetID for local machine used for response messages
-    :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
+    :param conn_port: Port broadcast servers are listening over
+    :param host_guid: GUID of local machine
+    :param host_netid: NetID for local machine used for response messages
+    :param connection_map: Dict of connected endpoints - {GUID: (IP, name)}
     '''
     _g_logger.info('Broadcast server\'s mainloop started')
 
@@ -108,13 +108,15 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
                 try:
                     net_pkt = netprotocol.deserialize(rx_data)
                 except ValueError:
-                    _g_logger.error('Received data is not a valid packet')
+                    _g_logger.error('Received data is not a valid packet: %s'
+                                    % rx_data)
                     continue  # Invalid packet
 
                 # Sanity check IP addressing
                 # Destination address in packet will be broadcast address
-                if net_pkt.src != rx_addr[0] or net_pkt.src == host_ip:
-                    _g_logger.error('Received data\'s addressing invalid')
+                if net_pkt.src != rx_addr[0] or net_pkt.src == host_guid:
+                    _g_logger.error('Received data\'s addressing invalid: %s'
+                                    % net_pkt)
                     continue  # Invalid address(es)
 
                 # Determine the message type of the packet's payload
@@ -122,7 +124,8 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
                 msg_type = msgprotocol.decode_msgtype(pkt_msg)
 
                 if msg_type is None:
-                    _g_logger.error('Packet contained invalid payload')
+                    _g_logger.error('Packet contained invalid payload: %s'
+                                    % msg_type)
                     continue  # Invalid message
 
                 if msg_type == msg.MsgType.ENDPOINT_CONNECTION_RESPONSE:
@@ -134,7 +137,8 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
                     net_id = msg.decode_payload(pkt_msg)
 
                     # Add device to connections list
-                    connection_map[net_id] = net_pkt.src
+                    connection_map[net_pkt.src] = (rx_addr, net_id.name)
+                    # TODO write into queue for passing data to UI
 
                 elif msg_type == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST:
                     # Received an initial connection broadcast from
@@ -144,6 +148,10 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
                     # Extract information from message
                     net_id = msg.decode_payload(pkt_msg)
 
+                    # Add device to connections list
+                    connection_map[net_pkt.src] = (rx_addr, net_id.name)
+                    # TODO write into queue for passing data to UI
+
                     # Spawn socket to send response and place into output list
                     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     sock.setsockopt(socket.SOL_SOCKET,
@@ -152,12 +160,8 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
 
                     outputs.append(sock)
 
-                    # Add socket with destination address to message queue
-                    resp_addr = (rx_addr[0], rx_port)
-                    msg_queues[sock] = resp_addr
-
-                    # Add device to connections list
-                    connection_map[net_id] = net_pkt.src
+                    # Add socket with destination guid to message queue
+                    msg_queues[sock] = net_pkt.src
 
             elif s is _g_recv_kill_sock:
                 _g_logger.info('Broadcast server received kill signal')
@@ -167,16 +171,17 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
 
         # Writable sockets have data ready to send
         for s in writable:
-            # Get AF_INET address to send to from message queue
-            dst_addr = msg_queues[s]
+            # Construct AF_INET address to send to from message queue
+            dst_guid = msg_queues[s]
+            dst_addr = (connection_map[dst_guid][0], conn_port)
 
             # Construct response message
             resp_type = msg.MsgType.ENDPOINT_CONNECTION_RESPONSE
-            broadcast_msg = msg.construct(resp_type, host_id)
+            broadcast_msg = msg.construct(resp_type, host_netid)
             serialized_msg = msgprotocol.serialize(broadcast_msg)
 
             # Construct packet
-            pkt = netpacket.NetPacket(host_ip, dst_addr[0], serialized_msg)
+            pkt = netpacket.NetPacket(host_guid, dst_guid, serialized_msg)
             serialized_pkt = netprotocol.serialize(pkt)
 
             # Send out data over socket
@@ -219,15 +224,15 @@ def __mainloop(server, rx_port, host_ip, host_id, connection_map):
     __cleanup(inputs, outputs)
 
 
-def start(rx_port, host_ip, host_id, connection_map):
+def start(conn_port, host_guid, host_netid, connection_map):
     '''
     Starts up broadcast server's mainloop on separate thread
     and returns control to caller.
 
-    :param rx_port: Port for broadcast server to listen on
-    :param host_ip: IP address of local machine
-    :param host_id: Endpoint NetID for local machine
-    :param connection_map: Dict of connected endpoints - mapping {NetID: IP}
+    :param conn_port: Port for broadcast server to listen on
+    :param host_guid: GUID of local machine
+    :param host_netid: Endpoint NetID for local machine
+    :param connection_map: Dict of connected endpoints - {GUID: (IP, name)}
     '''
     global _g_kill_sock
     global _g_recv_kill_sock
@@ -248,7 +253,7 @@ def start(rx_port, host_ip, host_id, connection_map):
     _g_logger.info('Dummy TCP socket pair created and configured')
 
     # Create and configure UDP server socket to receive UDP broadcasts
-    server_addr = ('', rx_port)  # Listen on all interfaces
+    server_addr = ('', conn_port)  # Listen on all interfaces
 
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
@@ -261,8 +266,8 @@ def start(rx_port, host_ip, host_id, connection_map):
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
                                           args=(server,
-                                                rx_port,
-                                                host_ip,
-                                                host_id,
+                                                conn_port,
+                                                host_guid,
+                                                host_netid,
                                                 connection_map))
     _g_mainloop_thread.start()
