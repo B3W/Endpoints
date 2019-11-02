@@ -1,22 +1,23 @@
-'''
-Entry point for Enpoints application
-'''
-from discovery import netserve, netfind
+'''Entry point for Endpoints application'''
+from discovery import netfind, netserve
 import errno
 import logging
 from network import netid
 import os
 import platform
+import queue
 from shared import config as c
-from shared import netutils
 from shared import synceddict as sd
+from shared import timeutils
+import uuid
+
 
 if __name__ == '__main__':
     # Get path to this module
     main_path = os.path.dirname(os.path.abspath(__file__))
 
     # Initialize logging module
-    log_name = 'Endpoint-Log.log'
+    log_name = 'Endpoint-Log-%s.log' % timeutils.get_iso_timestamp()
     log_dir = os.path.join(main_path, '.logs')
 
     try:
@@ -32,82 +33,79 @@ if __name__ == '__main__':
                                ' %(levelname)s(%(name)s): %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S', level=logging.DEBUG)
 
-    # Retrieve logger
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)  # Retrieve module logger
 
     # Construct configuration path and load configuration
     config_path = os.path.join(main_path, 'config.json')
     c.Config.load(config_path)
-    logger.info('Loaded configuration from %s', config_path)
+
+    # Construct host's GUID
+    encoding = c.Config.get(c.ConfigEnum.BYTE_ENCODING).strip()
+
+    try:
+        guid = c.Config.get(c.ConfigEnum.ENDPOINT_GUID)
+    except KeyError:
+        guid = uuid.uuid4().int  # Generate random GUID
+        c.Config.set(c.ConfigEnum.ENDPOINT_GUID, guid)  # Write to config
+
+    logger.debug('GUID: %s', str(guid))
 
     # Construct machine's NetID
-    ep_name = c.Config.get(c.ConfigEnum.ENDPOINT_NAME).strip()
+    missing = False
+    try:
+        ep_name = c.Config.get(c.ConfigEnum.ENDPOINT_NAME).strip()
+    except KeyError:
+        missing = True
 
-    if len(ep_name) == 0:
+    if missing or len(ep_name) == 0:
         # Use machine name if none specified in configuration
         # Try to get machine name via env vars, fallback to platform.node
         ep_name = os.getenv('HOSTNAME',
                             os.getenv('COMPUTERNAME', platform.node()))
 
-        # Set value in config
         c.Config.set(c.ConfigEnum.ENDPOINT_NAME, ep_name)
 
-    net_id = netid.NetID(ep_name)
-    logger.debug('NetID: %s', net_id)
+    host_netid = netid.NetID(ep_name)
+    logger.debug('NetID: %s', host_netid)
 
-    # Retrieve host's IP
-    host_ip = netutils.get_host_ip()
-    logger.debug('Host IP: %s', host_ip)
+    # Retreive message ports
+    try:
+        conn_port = c.Config.get(c.ConfigEnum.CONNECTION_PORT)
+    except KeyError:
+        conn_port = 3434
+        c.Config.set(c.ConfigEnum.CONNECTION_PORT, conn_port)
 
-    # Initialize map for tracking connected devices - {NetID: IP}
+    logger.debug('Connection Port: %d', conn_port)
+
+    try:
+        msg_port = c.Config.get(c.ConfigEnum.MESSAGE_PORT)
+    except KeyError:
+        msg_port = 3435
+        c.Config.set(c.ConfigEnum.MESSAGE_PORT, msg_port)
+
+    logger.debug('Message Port: %d', msg_port)
+    logger.info('Loaded configuration from %s', config_path)
+
+    # Initialize map for tracking connected devices - {GUID: (IP, name)}
     endpoint_map = sd.SyncedDict()
 
+    # Initialize data passing queues
+    backend_queue = queue.Queue()  # Data -> backend services
+    ui_queue = queue.Queue()  # Data -> UI
+
     # Start UDP listener for connection broadcasts
-    rx_port = c.Config.get(c.ConfigEnum.RX_PORT)
-    logger.debug('RX Port: %d', rx_port)
+    netserve.start(conn_port, guid, host_netid, endpoint_map, ui_queue)
+    logger.info('Background connection service started')
 
-    netserve.start(rx_port, host_ip, net_id, endpoint_map)
-    logger.info('Broadcast server started')
+    # TODO Start up background message service
 
-    # Broadcast connection messages over network adapters
-    netfind.execute(rx_port, host_ip, net_id)
-    logger.info('Connection message broadcasting complete')
+    # TODO Start up queue message handler
 
-    # FOR TESTING PURPOSES ONLY
-    import signal
-    from time import sleep
+    # Broadcast discovery message over network adapters
+    netfind.execute(conn_port, guid, host_netid)
+    logger.info('Discovery message broadcasting complete')
 
-    def sigint_handler(signum, stack_frame):
-        global done
-        netserve.kill()
-        done = True
-
-    signal.signal(signal.SIGINT, sigint_handler)
-
-    global done
-    done = False
-
-    while not done:
-        sleep(1.0)
-
-    logger.debug('Connected Endpoints at time of exit: %s', endpoint_map)
-    print('Endpoints connected to at time of exit')
-    print(endpoint_map)
-
-    signal.signal(signal.SIGINT, signal.default_int_handler)
-
-    # Testing
-    # from message import msg
-    # from message import msgprotocol
-    # from network import netid
-    # from network import netpacket
-    # from network import netprotocol
-
-    # msg.test()
-    # msgprotocol.test()
-    # netid.test()
-    # netpacket.test()
-    # netprotocol.test()
+    # TODO Start up UI in main thread
 
     # Write configuration back to disk
     # c.Config.write()
