@@ -18,11 +18,11 @@ class ConfigEnum(enum.Enum):
 # Dictionary for conversion between enum and JSON field name
 # ***When adding settings to configuration only this dictionary needs edited***
 KEY_MAP = {
-    ConfigEnum.CONNECTION_PORT: 'connection_port',
+    ConfigEnum.CONNECTION_PORT: 'tcp_connection_port',
     ConfigEnum.BYTE_ENCODING: 'byte_encoding',
     ConfigEnum.ENDPOINT_GUID: 'endpoint_guid',
     ConfigEnum.ENDPOINT_NAME: 'endpoint_name',
-    ConfigEnum.MESSAGE_PORT: 'message_port'
+    ConfigEnum.BROADCAST_PORT: 'udp_broadcast_port'
 }
 
 
