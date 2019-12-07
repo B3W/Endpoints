@@ -66,7 +66,7 @@ def __cleanup(inputs, outputs):
         s.close()
 
 
-def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
+def __mainloop(server, conn_port, host_guid, host_netid, connection_map, ui_q):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
@@ -75,6 +75,7 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
     :param host_guid: GUID of local machine
     :param host_netid: NetID for local machine used for response messages
     :param connection_map: Dict of connected endpoints - {GUID: (IP, name)}
+    :param ui_q: Queue to write new Endpoint connections into
     '''
     _g_logger.info('Broadcast server\'s mainloop started')
 
@@ -94,7 +95,7 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
         for s in readable:
             if s is server:
                 # Potential broadcast received
-                # rx_addr will be sending Endpoint's socket address
+                # 'rx_addr' is sending Endpoint's socket address
                 rx_data, rx_addr = s.recvfrom(recv_buf_sz)
                 _g_logger.info('Broadcast server received \'%s\' from \'%s\'',
                                rx_data, rx_addr)
@@ -112,10 +113,9 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
                                     % rx_data)
                     continue  # Invalid packet
 
-                # Sanity check IP addressing
-                # Destination address in packet will be broadcast address
-                if net_pkt.src != rx_addr[0] or net_pkt.src == host_guid:
-                    _g_logger.error('Received data\'s addressing invalid: %s'
+                # Sanity check sender's GUID
+                if net_pkt.src == host_guid:
+                    _g_logger.error('Broadcast received from self: %s'
                                     % net_pkt)
                     continue  # Invalid address(es)
 
@@ -129,8 +129,7 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
                     continue  # Invalid message
 
                 if msg_type == msg.MsgType.ENDPOINT_CONNECTION_RESPONSE:
-                    # Received response from this Endpoint's
-                    # connection broadcast
+                    # Received response to this Endpoint's connection broadcast
                     _g_logger.info('Broadcast response received')
 
                     # Extract information from message
@@ -138,11 +137,12 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
 
                     # Add device to connections list
                     connection_map[net_pkt.src] = (rx_addr, net_id.name)
+
                     # TODO write into queue for passing data to UI
 
+
                 elif msg_type == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST:
-                    # Received an initial connection broadcast from
-                    # another Endpoint
+                    # Received connection broadcast from another Endpoint
                     _g_logger.info('Connection broadcast received')
 
                     # Extract information from message
@@ -150,7 +150,9 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
 
                     # Add device to connections list
                     connection_map[net_pkt.src] = (rx_addr, net_id.name)
+
                     # TODO write into queue for passing data to UI
+
 
                     # Spawn socket to send response and place into output list
                     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -168,6 +170,9 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
 
                 done = True  # End server after this iteration of mainloop
                 s.recv(recv_buf_sz)  # Clear out dummy data
+
+            else:
+                _g_logger.info('Invalid \'readable\' socket')
 
         # Writable sockets have data ready to send
         for s in writable:
@@ -210,7 +215,7 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
                 pass
 
             try:
-                inputs.remove(s)
+                outputs.remove(s)
             except ValueError:
                 pass
 
@@ -224,7 +229,7 @@ def __mainloop(server, conn_port, host_guid, host_netid, connection_map):
     __cleanup(inputs, outputs)
 
 
-def start(conn_port, host_guid, host_netid, connection_map):
+def start(conn_port, host_guid, host_netid, connection_map, ui_q):
     '''
     Starts up broadcast server's mainloop on separate thread
     and returns control to caller.
@@ -233,6 +238,7 @@ def start(conn_port, host_guid, host_netid, connection_map):
     :param host_guid: GUID of local machine
     :param host_netid: Endpoint NetID for local machine
     :param connection_map: Dict of connected endpoints - {GUID: (IP, name)}
+    :param ui_q: Queue to write new Endpoint connections into
     '''
     global _g_kill_sock
     global _g_recv_kill_sock
@@ -269,5 +275,6 @@ def start(conn_port, host_guid, host_netid, connection_map):
                                                 conn_port,
                                                 host_guid,
                                                 host_netid,
-                                                connection_map))
+                                                connection_map,
+                                                ui_q))
     _g_mainloop_thread.start()
