@@ -62,6 +62,48 @@ def __cleanup(sockets):
         s.close()
 
 
+def __buffer_data(data_buffer, rx_addr, rx_data):
+    '''
+    Buffer data and check if a full message was received
+
+    :returns: True if a full message was received, False otherwise
+    '''
+    full_message = False
+    rx_data_len = len(rx_data)
+
+    # Buffer data
+    try:
+        data_buffer[rx_addr] += rx_data
+    except KeyError:
+        data_buffer[rx_addr] = rx_data
+
+    # Extract packet's length field and compare
+    len_field = data_buffer[rx_addr][:netprotocol.g_LEN_PREF_SZ_BYTES]
+    pkt_len = socket.ntohs(len_field)
+
+    if rx_data_len == pkt_len:
+        full_message = True
+    elif rx_data_len < pkt_len:
+        full_message = False
+    else:
+        del data_buffer[rx_addr]
+        _g_logger.error('Received packet was too long...')
+        _g_logger.error('Expected Length: %d; Actual Length: %d',
+                        pkt_len, rx_data_len)
+
+    return full_message
+
+
+def __clear_buffer(data_buffer, rx_addr):
+    '''
+    Delete buffered data for specified IP if it exists
+    '''
+    try:
+        del data_buffer[rx_addr]
+    except KeyError:
+        pass
+
+
 def __validate_broadcast(rx_data, host_guid):
     '''
     '''
@@ -92,20 +134,21 @@ def __validate_broadcast(rx_data, host_guid):
     return net_pkt, valid
 
 
-def __mainloop(server, conn_port, host_guid, connection_map):
+def __mainloop(server, conn_port, host_guid, connection_queue):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting broadcasts
     :param conn_port: Port broadcast servers are listening over
     :param host_guid: GUID of local machine
-    :param connection_map: Dict of connected endpoints - {GUID: (IP, name)}
+    :param connection_queue: Queue for writing new connections into
     '''
     _g_logger.info('Broadcast server\'s mainloop started')
 
     recv_buf_sz = 1024  # Max size of received data in bytes
     done = False        # Flag indicating server mainloop should stop
     inputs = [server, _g_recv_kill_sock]    # Sockets to read
+    data_buffer = {}  # Keeps track of received data {IP: data}
 
     while inputs and not done:
         # Multiplex with 'select' call
@@ -120,10 +163,18 @@ def __mainloop(server, conn_port, host_guid, connection_map):
                 _g_logger.info('Broadcast server received \'%s\' from \'%s\'',
                                rx_data, rx_addr)
 
+                # Check if the full message was received
+                full_message = __buffer_data(data_buffer, rx_addr, rx_data)
+
+                if not full_message:
+                    continue
+
                 # Validate
-                net_pkt, valid = __validate_broadcast(rx_addr, host_guid)
+                net_pkt, valid = __validate_broadcast(data_buffer[rx_addr],
+                                                      host_guid)
 
                 if not valid:
+                    __clear_buffer(data_buffer, rx_addr)
                     continue
 
                 # Determine the message type of the packet's payload
@@ -138,7 +189,10 @@ def __mainloop(server, conn_port, host_guid, connection_map):
                     net_id = msg.decode_payload(pkt_msg)
 
                     # Report device connection request
-                    connection_map[net_pkt.src] = (rx_addr, net_id.name)
+                    device = (net_pkt.src, rx_addr, net_id.name)
+                    connection_queue.put(device)
+
+                    __clear_buffer(data_buffer, rx_addr)
 
                 else:
                     _g_logger.error('Invalid broadcast payload type: %s'
@@ -167,17 +221,17 @@ def __mainloop(server, conn_port, host_guid, connection_map):
 
     # Cleanup sockets on exit
     __cleanup(inputs)
-    _g_logger.info('Broadcast server closing')
+    _g_logger.info('Broadcast server closed')
 
 
-def start(conn_port, host_guid, connection_map):
+def start(conn_port, host_guid, connection_queue):
     '''
     Starts up broadcast server's mainloop on separate thread
     and returns control to caller.
 
     :param conn_port: Port for broadcast server to listen on
     :param host_guid: GUID of local machine
-    :param connection_map: Dict of connected endpoints - {GUID: (IP, name)}
+    :param connection_queue: Queue for writing new connections into
     '''
     global _g_kill_sock
     global _g_recv_kill_sock
@@ -213,5 +267,5 @@ def start(conn_port, host_guid, connection_map):
                                           args=(server,
                                                 conn_port,
                                                 host_guid,
-                                                connection_map))
+                                                connection_queue))
     _g_mainloop_thread.start()

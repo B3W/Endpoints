@@ -92,7 +92,7 @@ def is_valid_pkt(byte_data):
     valid = False
 
     if len(byte_data) < (g_HEADER_SZ_BYTES + msgprotocol.g_HEADER_SZ_BYTES):
-        # Pkt contains both network header and message header
+        # Pkt does not contains network header and message header
         valid = False
     else:
         # Check for valid message payload
