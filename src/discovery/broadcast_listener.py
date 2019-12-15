@@ -134,14 +134,14 @@ def __validate_broadcast(rx_data, host_guid):
     return net_pkt, valid
 
 
-def __mainloop(server, conn_port, host_guid, connection_queue):
+def __mainloop(server, cast_port, host_guid, request_queue):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting broadcasts
-    :param conn_port: Port broadcast servers are listening over
+    :param cast_port: Port broadcast servers are listening over
     :param host_guid: GUID of local machine
-    :param connection_queue: Queue for writing new connections into
+    :param request_queue: Queue for writing new connection requests into
     '''
     _g_logger.info('Broadcast server\'s mainloop started')
 
@@ -190,7 +190,7 @@ def __mainloop(server, conn_port, host_guid, connection_queue):
 
                     # Report device connection request
                     device = (net_pkt.src, rx_addr, net_id.name)
-                    connection_queue.put(device)
+                    request_queue.put(device)
 
                     __clear_buffer(data_buffer, rx_addr)
 
@@ -214,9 +214,11 @@ def __mainloop(server, conn_port, host_guid, connection_queue):
             __cleanup(inputs)
 
             if s is server:
+                _g_logger.critical('Broadcast server encountered fatal error')
                 raise RuntimeError('Broadcast server encountered fatal error')
 
             else:
+                _g_logger.critical('Non-server socket encountered fatal error')
                 raise RuntimeError('Non-server socket encountered fatal error')
 
     # Cleanup sockets on exit
@@ -224,14 +226,14 @@ def __mainloop(server, conn_port, host_guid, connection_queue):
     _g_logger.info('Broadcast server closed')
 
 
-def start(conn_port, host_guid, connection_queue):
+def start(cast_port, host_guid, request_queue):
     '''
     Starts up broadcast server's mainloop on separate thread
     and returns control to caller.
 
-    :param conn_port: Port for broadcast server to listen on
+    :param cast_port: Port for broadcast server to listen on
     :param host_guid: GUID of local machine
-    :param connection_queue: Queue for writing new connections into
+    :param request_queue: Queue for writing new connection requests into
     '''
     global _g_kill_sock
     global _g_recv_kill_sock
@@ -246,26 +248,24 @@ def start(conn_port, host_guid, connection_queue):
     _g_recv_kill_sock.setsockopt(socket.SOL_SOCKET,
                                  socket.SO_REUSEADDR,
                                  opt_val)
-
     _g_recv_kill_sock.setblocking(False)
 
     _g_logger.info('Dummy TCP socket pair created and configured')
 
     # Create and configure UDP server socket to receive UDP broadcasts
-    server_addr = ('', conn_port)  # Listen on all interfaces
+    server_addr = ('', cast_port)  # Listen on all interfaces
 
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
     server.setblocking(False)
 
     server.bind(server_addr)
-
     _g_logger.info('UDP broadcast server socket created and configured')
 
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
                                           args=(server,
-                                                conn_port,
+                                                cast_port,
                                                 host_guid,
-                                                connection_queue))
+                                                request_queue))
     _g_mainloop_thread.start()

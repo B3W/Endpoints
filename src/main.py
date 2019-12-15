@@ -1,5 +1,5 @@
 '''Entry point for Endpoints application'''
-from discovery import netfind, netserve
+from discovery import broadcast, broadcast_listener
 import errno
 import logging
 from network import netid
@@ -43,12 +43,12 @@ if __name__ == '__main__':
     encoding = c.Config.get(c.ConfigEnum.BYTE_ENCODING).strip()
 
     try:
-        guid = c.Config.get(c.ConfigEnum.ENDPOINT_GUID)
+        host_guid = c.Config.get(c.ConfigEnum.ENDPOINT_GUID)
     except KeyError:
-        guid = uuid.uuid4().int  # Generate random GUID
-        c.Config.set(c.ConfigEnum.ENDPOINT_GUID, guid)  # Write to config
+        host_guid = uuid.uuid4().int  # Generate random GUID
+        c.Config.set(c.ConfigEnum.ENDPOINT_GUID, host_guid)  # Write to config
 
-    logger.debug('GUID: %s', str(guid))
+    logger.debug('GUID: %s', str(host_guid))
 
     # Construct machine's NetID
     missing = False
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     host_netid = netid.NetID(ep_name)
     logger.debug('NetID: %s', host_netid)
 
-    # Retreive message ports
+    # Retreive port numbers
     try:
         conn_port = c.Config.get(c.ConfigEnum.CONNECTION_PORT)
     except KeyError:
@@ -78,34 +78,40 @@ if __name__ == '__main__':
     logger.debug('Connection Port: %d', conn_port)
 
     try:
-        msg_port = c.Config.get(c.ConfigEnum.MESSAGE_PORT)
+        broadcast_port = c.Config.get(c.ConfigEnum.BROADCAST_PORT)
     except KeyError:
-        msg_port = 3435
-        c.Config.set(c.ConfigEnum.MESSAGE_PORT, msg_port)
+        broadcast_port = 3434
+        c.Config.set(c.ConfigEnum.BROADCAST_PORT, broadcast_port)
 
-    logger.debug('Message Port: %d', msg_port)
+    logger.debug('Broadcast Port: %d', broadcast_port)
     logger.info('Loaded configuration from %s', config_path)
 
     # Initialize map for tracking connected devices - {GUID: (IP, name)}
-    endpoint_map = sd.SyncedDict()
+    conn_map = sd.SyncedDict()
 
     # Initialize data passing queues
+    connection_queue = queue.Queue()  # For writing new connections into
     backend_queue = queue.Queue()  # Data -> backend services
     ui_queue = queue.Queue()  # Data -> UI
 
+    # TODO Start TCP listener for connection requests
+
+    # TODO Start TCP connection manager for requesting new connections
+
     # Start UDP listener for connection broadcasts
-    netserve.start(conn_port, guid, host_netid, endpoint_map, ui_queue)
+    broadcast_listener.start(broadcast_port, host_guid, connection_queue)
     logger.info('Background connection service started')
 
-    # TODO Start up background message service
-
-    # TODO Start up queue message handler
+    # TODO Start UI -> Backend queue message handler
 
     # Broadcast discovery message over network adapters
-    netfind.execute(conn_port, guid, host_netid)
+    broadcast.execute(broadcast_port, host_guid, host_netid)
     logger.info('Discovery message broadcasting complete')
 
     # TODO Start up UI in main thread
+
+    # Shutdown
+    broadcast_listener.kill()
 
     # Write configuration back to disk
     # c.Config.write()
