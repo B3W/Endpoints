@@ -73,11 +73,11 @@ def construct(msg_type, payload):
     '''
     Constructs appropriate message based on given arguments
     '''
+    byte_data = payload
+
     if msg_type in CONNECTION_MSG_TYPES:
         # Payload is a NetID object
-        byte_data = payload.tobytes()
-
-        return Msg(msg_type, byte_data)
+        byte_data = netid.tobytes(payload)
 
     elif msg_type in COMMUNICATION_MSG_TYPES:
         # Payload is a string or bytes object
@@ -87,12 +87,12 @@ def construct(msg_type, payload):
 
         except AttributeError:
             # Bytes object so no need to encode
-            byte_data = payload
-
-        return Msg(msg_type, byte_data)
+            pass
 
     else:
-        raise ValueError('%s is not a supported MsgType' % (str(msg_type)))
+        raise ValueError(f'{str(msg_type)} is not a supported MsgType')
+
+    return Msg(msg_type, byte_data)
 
 
 def decode_payload(message):

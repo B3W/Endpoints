@@ -1,5 +1,5 @@
 """
-Module providing server for serving to Enpoint conversation connections.
+Module providing server listening for Enpoint conversation connections.
 Server runs on a separate thread from caller.
 """
 import logging
@@ -20,10 +20,10 @@ def kill():
         # 'start' called at least once but thread is inactive
         if not _g_mainloop_thread.is_alive():
             _g_logger.critical('Attempted to kill connection server'
-                               ' which has not been started')
+                               ' which has already terminated')
 
             raise RuntimeError('Cannot kill connection server'
-                               ' which has not been started')
+                               ' which has already terminated')
     except NameError:
         # 'start' never called so _g_mainloop_thread not defined
         _g_logger.critical('Attempted to kill connection server'
@@ -47,8 +47,6 @@ def kill():
     if _g_mainloop_thread.is_alive():
         _g_logger.error('Unable to join connection server\'s thread')
 
-    _g_logger.info('Broadcast server closed')
-
 
 def __cleanup(sockets):
     '''
@@ -62,9 +60,9 @@ def __cleanup(sockets):
 
 def __mainloop(server, conn_port, host_guid, connection_queue):
     '''
-    Broadcast server's mainloop (should be run in separate thread)
+    Connection server's mainloop (should be run in separate thread)
 
-    :param server: Server socket for detecting broadcasts
+    :param server: Server socket for detecting connections
     :param conn_port: Port connection servers are listening over
     :param host_guid: GUID of local machine
     :param connection_queue: Queue for writing new connections into
@@ -85,7 +83,7 @@ def __mainloop(server, conn_port, host_guid, connection_queue):
                 # Accept new connection
                 conn_sock, addr = s.accept()
 
-                # Pass new connection to comm manager
+                # Wait for new connection to report its GUID
                 # TODO
 
             elif s is _g_recv_kill_sock:
@@ -142,7 +140,7 @@ def start(conn_port, host_guid, connection_queue):
 
     _g_logger.info('Dummy TCP socket pair created and configured')
 
-    # Create and configure UDP server socket to receive UDP broadcasts
+    # Create and configure TCP server socket to receive TCP connection requests
     server_addr = ('', conn_port)  # Listen on all interfaces
 
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)

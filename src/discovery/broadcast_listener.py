@@ -22,10 +22,10 @@ def kill():
         # 'start' called at least once but thread is inactive
         if not _g_mainloop_thread.is_alive():
             _g_logger.critical('Attempted to kill broadcast server'
-                               ' which has not been started')
+                               ' which has already terminated')
 
             raise RuntimeError('Cannot kill broadcast server'
-                               ' which has not been started')
+                               ' which has already terminated')
     except NameError:
         # 'start' never called so _g_mainloop_thread not defined
         _g_logger.critical('Attempted to kill broadcast server'
@@ -49,8 +49,6 @@ def kill():
     if _g_mainloop_thread.is_alive():
         _g_logger.error('Unable to join broadcast server\'s thread')
 
-    _g_logger.info('Broadcast server closed')
-
 
 def __cleanup(sockets):
     '''
@@ -71,10 +69,11 @@ def __buffer_data(data_buffer, rx_addr, rx_data):
     full_message = False
     rx_data_len = len(rx_data)
 
-    # Buffer data
     try:
+        # Add data to an existing buffer
         data_buffer[rx_addr] += rx_data
     except KeyError:
+        # Create a new buffer for the data
         data_buffer[rx_addr] = rx_data
 
     # Extract packet's length field and compare
@@ -82,10 +81,13 @@ def __buffer_data(data_buffer, rx_addr, rx_data):
     pkt_len = socket.ntohs(len_field)
 
     if rx_data_len == pkt_len:
+        # Received full message
         full_message = True
     elif rx_data_len < pkt_len:
+        # Received partial message
         full_message = False
     else:
+        # Received invalid message
         del data_buffer[rx_addr]
         _g_logger.error('Received packet was too long...')
         _g_logger.error('Expected Length: %d; Actual Length: %d',
@@ -121,27 +123,25 @@ def __validate_broadcast(rx_data, host_guid):
             net_pkt = netprotocol.deserialize(rx_data)
         except ValueError:
             valid = False
-            _g_logger.error('Received data is not a valid packet: %s'
-                            % rx_data)
+            _g_logger.error(f'Received data is not a valid packet: {rx_data}')
 
     # Sanity check sender's GUID
     if valid:
         if net_pkt.src == host_guid:
             valid = False
-            _g_logger.error('Broadcast received from self: %s'
-                            % net_pkt)
+            _g_logger.error(f'Broadcast received from self: {net_pkt}')
 
     return net_pkt, valid
 
 
-def __mainloop(server, cast_port, host_guid, request_queue):
+def __mainloop(server, bcast_port, host_guid, request_queue):
     '''
     Broadcast server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting broadcasts
-    :param cast_port: Port broadcast servers are listening over
+    :param bcast_port: Port broadcast servers are listening over
     :param host_guid: GUID of local machine
-    :param request_queue: Queue for writing new connection requests into
+    :param request_queue: Queue for writing new connection broadcasts into
     '''
     _g_logger.info('Broadcast server\'s mainloop started')
 
@@ -167,6 +167,7 @@ def __mainloop(server, cast_port, host_guid, request_queue):
                 full_message = __buffer_data(data_buffer, rx_addr, rx_data)
 
                 if not full_message:
+                    # Received partial or invalid packet
                     continue
 
                 # Validate
@@ -174,6 +175,7 @@ def __mainloop(server, cast_port, host_guid, request_queue):
                                                       host_guid)
 
                 if not valid:
+                    # Received full packet but packet was invalid
                     __clear_buffer(data_buffer, rx_addr)
                     continue
 
@@ -189,8 +191,8 @@ def __mainloop(server, cast_port, host_guid, request_queue):
                     net_id = msg.decode_payload(pkt_msg)
 
                     # Report device connection request
-                    device = (net_pkt.src, rx_addr, net_id.name)
-                    request_queue.put(device)
+                    connection = (net_pkt.src, rx_addr, net_id.name)
+                    request_queue.put(connection)
 
                     __clear_buffer(data_buffer, rx_addr)
 
@@ -226,14 +228,14 @@ def __mainloop(server, cast_port, host_guid, request_queue):
     _g_logger.info('Broadcast server closed')
 
 
-def start(cast_port, host_guid, request_queue):
+def start(bcast_port, host_guid, request_queue):
     '''
     Starts up broadcast server's mainloop on separate thread
     and returns control to caller.
 
-    :param cast_port: Port for broadcast server to listen on
+    :param bcast_port: Port for broadcast server to listen on
     :param host_guid: GUID of local machine
-    :param request_queue: Queue for writing new connection requests into
+    :param request_queue: Queue for writing new connection broadcasts into
     '''
     global _g_kill_sock
     global _g_recv_kill_sock
@@ -253,7 +255,7 @@ def start(cast_port, host_guid, request_queue):
     _g_logger.info('Dummy TCP socket pair created and configured')
 
     # Create and configure UDP server socket to receive UDP broadcasts
-    server_addr = ('', cast_port)  # Listen on all interfaces
+    server_addr = ('', bcast_port)  # Listen on all interfaces
 
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
@@ -265,7 +267,7 @@ def start(cast_port, host_guid, request_queue):
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
                                           args=(server,
-                                                cast_port,
+                                                bcast_port,
                                                 host_guid,
                                                 request_queue))
     _g_mainloop_thread.start()

@@ -29,7 +29,7 @@ def __broadcast(data, src_id, dst_addr):
     pkt = netpacket.NetPacket(src_id, dst_id, serialized_msg)
 
     serialized_pkt = netprotocol.serialize(pkt)
-    _g_logger.debug('Constructed broadcasting packet: %s', serialized_pkt)
+    _g_logger.debug(f'Constructed broadcasting packet: {serialized_pkt}')
 
     # Create/Configure UDP socket for broadcasting
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -64,7 +64,7 @@ def execute(port, src_guid, net_id):
     :param net_id: Host's NetID
     '''
     broadcast_ips = netutils.get_broadcast_ips()  # Check adapter info
-    _g_logger.debug('Broadcast IPs: %s', broadcast_ips)
+    _g_logger.debug(f'Broadcast IPs: {broadcast_ips}')
 
     # Sanity check that network adapters are available for broadcasting
     num_broadcast_ips = len(broadcast_ips)
@@ -76,7 +76,7 @@ def execute(port, src_guid, net_id):
     # Construct broadcasting message
     broadcast_msg = msg.construct(msg.MsgType.ENDPOINT_CONNECTION_BROADCAST,
                                   net_id)
-    _g_logger.debug('Constructed broadcast message: %s', broadcast_msg)
+    _g_logger.debug(f'Constructed broadcast message: {broadcast_msg}')
 
     # Send out broadcasts
     with ThreadPoolExecutor(max_workers=num_broadcast_ips) as executor:

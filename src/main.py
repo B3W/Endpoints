@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
         c.Config.set(c.ConfigEnum.ENDPOINT_NAME, ep_name)
 
-    host_netid = netid.NetID(ep_name)
+    host_netid = netid.NetID(host_guid, ep_name)
     logger.debug('NetID: %s', host_netid)
 
     # Retreive port numbers
@@ -87,10 +87,10 @@ if __name__ == '__main__':
     logger.info('Loaded configuration from %s', config_path)
 
     # Initialize map for tracking connected devices - {GUID: (IP, name)}
-    conn_map = sd.SyncedDict()
+    connection_map = sd.SyncedDict()
 
     # Initialize data passing queues
-    connection_queue = queue.Queue()  # For writing new connections into
+    connection_bcast_queue = queue.Queue()  # Broadcasted connection requests
     backend_queue = queue.Queue()  # Data -> backend services
     ui_queue = queue.Queue()  # Data -> UI
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # TODO Start TCP connection manager for requesting new connections
 
     # Start UDP listener for connection broadcasts
-    broadcast_listener.start(broadcast_port, host_guid, connection_queue)
+    broadcast_listener.start(broadcast_port, host_guid, connection_bcast_queue)
     logger.info('Background connection service started')
 
     # TODO Start UI -> Backend queue message handler

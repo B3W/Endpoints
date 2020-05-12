@@ -4,16 +4,15 @@ sending and receiving data between Endpoint applications.
 """
 from message import msgprotocol
 from network import netpacket as np
+from network import netid
 from shared import config as c
 import struct
 import sys
 
-g_GUID_SZ_BYTES = 16  # GUIDs are 128-bit integers
-
 _g_NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
 _g_LEN_PREF_FMT = 'H'  # Length-prefix formatting (2 bytes alloted)
-_g_SRC_ID_FMT = g_GUID_SZ_BYTES + 's'  # GUID as bytes
-_g_DST_ID_FMT = g_GUID_SZ_BYTES + 's'  # GUID as bytes
+_g_SRC_ID_FMT = netid.NetID.GUID_PACK_FMT  # Src GUID format
+_g_DST_ID_FMT = netid.NetID.GUID_PACK_FMT  # Dst GUID format
 
 # Bytes alloted for length prefix
 g_LEN_PREF_SZ_BYTES = struct.calcsize(_g_LEN_PREF_FMT)
@@ -39,10 +38,10 @@ def serialize(packet):
     dynamic_fmt = pack_fmt % (len(packet))
     msg_sz = struct.calcsize(dynamic_fmt)
 
-    src_guid_bytes = packet.src.to_bytes(g_GUID_SZ_BYTES,
+    src_guid_bytes = packet.src.to_bytes(netid.NetID.GUID_SZ_BYTES,
                                          byteorder=sys.byteorder,
                                          signed=False)
-    dst_guid_bytes = packet.dst.to_bytes(g_GUID_SZ_BYTES,
+    dst_guid_bytes = packet.dst.to_bytes(netid.NetID.GUID_SZ_BYTES,
                                          byteorder=sys.byteorder,
                                          signed=False)
 
