@@ -16,8 +16,8 @@ class MsgType(enum.Enum):
 
     # Message broadcast when a new Endpoint connects to LAN
     ENDPOINT_CONNECTION_BROADCAST = 1
-    # Response to the new connection broadcast
-    ENDPOINT_CONNECTION_RESPONSE = 2
+    # Message for reporting GUID to a new connection
+    ENDPOINT_CONNECTION_START = 2
     # Message broadcast to connected Enpoints when an Endpoint disconnects
     ENDPOINT_DISCONNECTION = 3
     # Message for sending user communication between Endpoints
@@ -62,7 +62,7 @@ class Msg(object):
 
 # Used for validation of MsgType
 CONNECTION_MSG_TYPES = [MsgType.ENDPOINT_CONNECTION_BROADCAST,
-                        MsgType.ENDPOINT_CONNECTION_RESPONSE,
+                        MsgType.ENDPOINT_CONNECTION_START,
                         MsgType.ENDPOINT_DISCONNECTION]
 
 COMMUNICATION_MSG_TYPES = [MsgType.ENDPOINT_COMMUNICATION,

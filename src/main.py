@@ -1,4 +1,5 @@
 '''Entry point for Endpoints application'''
+from connection import connection_manager
 from discovery import broadcast, broadcast_listener
 import errno
 import logging
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     logger.debug('Broadcast Port: %d', broadcast_port)
     logger.info('Loaded configuration from %s', config_path)
 
-    # Initialize map for tracking connected devices - {GUID: (IP, name)}
+    # Initialize map for tracking connected devices - {GUID: (name, socket)}
     connection_map = sd.SyncedDict()
 
     # Initialize data passing queues
@@ -94,13 +95,13 @@ if __name__ == '__main__':
     backend_queue = queue.Queue()  # Data -> backend services
     ui_queue = queue.Queue()  # Data -> UI
 
-    # TODO Start TCP listener for connection requests
-
-    # TODO Start TCP connection manager for requesting new connections
+    # Start TCP connection manager
+    connection_manager.start(conn_port, host_guid, connection_map)
+    logger.info("Connection manager service started")
 
     # Start UDP listener for connection broadcasts
     broadcast_listener.start(broadcast_port, host_guid, connection_bcast_queue)
-    logger.info('Background connection service started')
+    logger.info('Broadcast listener service started')
 
     # TODO Start UI -> Backend queue message handler
 

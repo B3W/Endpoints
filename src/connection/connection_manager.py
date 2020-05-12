@@ -3,11 +3,37 @@ Module providing server listening for Enpoint conversation connections.
 Server runs on a separate thread from caller.
 """
 import logging
+from message import msg, msgprotocol
+from network import netprotocol
 import select
 import socket
 import threading
 
 _g_logger = logging.getLogger(__name__)
+
+
+def report_connection(net_id, sock):
+    '''
+    '''
+    global _g_inputs
+    global _g_connection_map
+
+    # Add socket to 'select' logic
+    _g_inputs.append(sock)
+
+    # Record active connection {GUID: (name, socket)}
+    _g_connection_map[net_id.guid] = (net_id.name, sock)
+
+    # TODO Report connection to the UI
+
+
+def send_msg(guid, message):
+    '''
+    '''
+    global _g_outputs
+
+    # TODO
+    pass
 
 
 def kill():
@@ -58,48 +84,153 @@ def __cleanup(sockets):
         s.close()
 
 
-def __mainloop(server, conn_port, host_guid, connection_queue):
+def __validate_pkt(rx_data, host_guid):
+    '''
+    '''
+    valid = True
+    net_pkt = None
+
+    # Check if data available
+    if not rx_data:
+        valid = False
+        _g_logger.error('Received empty data')
+
+    # Deserialize packet
+    if valid:
+        try:
+            net_pkt = netprotocol.deserialize(rx_data)
+        except ValueError:
+            valid = False
+            _g_logger.error(f'Received data is not a valid packet: {rx_data}')
+
+    # Sanity check sender's GUID
+    if valid:
+        if net_pkt.src == host_guid:
+            valid = False
+            _g_logger.error(f'Connection received from self: {net_pkt}')
+
+    return net_pkt, valid
+
+
+def __process_rx_data(addr, data, sock, host_guid):
+    '''
+    '''
+    global _g_inputs
+    global _g_connection_map
+
+    if data:
+        # Make sure received data is a valid packet
+        net_pkt, valid = __validate_pkt(data, host_guid)
+
+        if not valid:
+            _g_inputs.remove(sock)
+            sock.close()
+            _g_logger.error("Received invalid packet")
+            return
+
+        # Extract message type of the packet's payload
+        payload = net_pkt.msg_payload
+        msg_type = msgprotocol.decode_msgtype(payload)
+
+        if msg_type == msg.MsgType.ENDPOINT_CONNECTION_START:
+            # A connection was accepted
+            _g_logger.info("Connection accepted")
+
+            net_id = msg.decode_payload(payload)
+
+            if net_id.guid not in _g_connection_map:
+                # TODO Notify UI of a new connection
+                pass
+
+            # Record/Update active connection {GUID: (name, socket)}
+            _g_connection_map[net_id.guid] = (net_id.name, sock)
+
+        elif msg_type == msg.MsgType.ENDPOINT_COMMUNICATION:
+            # A connection sent a message
+            _g_logger.info("Message received")
+
+            # message = msg.decode_payload(payload)
+
+            # TODO Report message to the UI
+            pass
+
+        elif msg_type == msg.MsgType.ENDPOINT_DISCONNECTION:
+            # A connection is getting disconnected
+            _g_logger.info("Disconnection reported")
+
+            net_id = msg.decode_payload(payload)
+
+            # Close the connection
+            _g_inputs.remove(sock)
+            sock.close()
+            del _g_connection_map[net_id.guid]
+
+        else:
+            _g_logger.error('Invalid connection payload type: %s'
+                            % msg_type)
+
+    else:
+        # Something went wrong
+        _g_inputs.remove(sock)
+        sock.close()
+
+
+def __mainloop(server, host_guid):
     '''
     Connection server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting connections
-    :param conn_port: Port connection servers are listening over
     :param host_guid: GUID of local machine
-    :param connection_queue: Queue for writing new connections into
     '''
     _g_logger.info('Connection server\'s mainloop started')
 
-    recv_buf_sz = 1024  # Max size of received data in bytes
-    done = False        # Flag indicating server mainloop should stop
-    inputs = [server, _g_recv_kill_sock]    # Sockets to read
+    global _g_inputs
+    global _g_outputs
 
-    while inputs and not done:
+    RECV_BUF_SZ = 1024  # Max size of received data in bytes
+    done = False        # Flag indicating server mainloop should stop
+    _g_inputs = [server, _g_recv_kill_sock]    # Sockets to read
+    _g_outputs = []
+
+    while _g_inputs and not done:
         # Multiplex with 'select' call
-        readable, _, exceptional = select.select(inputs, [], inputs)
+        readable, writable, exceptional = select.select(_g_inputs,
+                                                        _g_outputs,
+                                                        _g_inputs)
 
         # Readable sockets have data ready to read
         for s in readable:
             if s is server:
-                # Accept new connection
+                # Accept connections
                 conn_sock, addr = s.accept()
 
-                # Wait for new connection to report its GUID
-                # TODO
+                # Wait for connections to report its GUID
+                conn_sock.setblocking(False)
+                _g_inputs.append(conn_sock)
 
             elif s is _g_recv_kill_sock:
                 _g_logger.info('Connection server received kill signal')
-                s.recv(recv_buf_sz)  # Clear out dummy data
+                s.recv(RECV_BUF_SZ)  # Clear out dummy data
                 done = True  # End server after this iteration of mainloop
 
             else:
-                s.close()
-                _g_logger.error('Invalid \'readable\' socket')
+                # Established socket sent data
+                rx_data, rx_addr = s.recvfrom(RECV_BUF_SZ)
+                _g_logger.info('Connection server received \'%s\' from \'%s\'',
+                               rx_data, rx_addr)
+
+                __process_rx_data(rx_addr, rx_data, s, host_guid)
+
+        # Writable sockets have data ready to be sent
+        for s in writable:
+            # TODO
+            pass
 
         # Exceptional sockets experience 'exceptional condition'
         for s in exceptional:
             # Raise exception if server is 'exceptional'
             # Unreleased resources will get garbage collected by OS
-            __cleanup(inputs)
+            __cleanup(_g_inputs)
 
             if s is server:
                 _g_logger.critical('Connection server encountered fatal error')
@@ -110,22 +241,23 @@ def __mainloop(server, conn_port, host_guid, connection_queue):
                 raise RuntimeError('Non-server socket encountered fatal error')
 
     # Cleanup sockets on exit
-    __cleanup(inputs)
+    __cleanup(_g_inputs)
     _g_logger.info('Connection server closed')
 
 
-def start(conn_port, host_guid, connection_queue):
+def start(conn_port, host_guid, connection_map):
     '''
     Starts up connection server's mainloop on separate thread
     and returns control to caller.
 
     :param conn_port: Port for connection server to listen on
     :param host_guid: GUID of local machine
-    :param connection_queue: Queue for writing new connections into
+    :param connection_map: Dictionary for tracking active connections
     '''
     global _g_kill_sock
     global _g_recv_kill_sock
     global _g_mainloop_thread
+    global _g_connection_map
 
     opt_val = 1  # For setting socket options
 
@@ -150,10 +282,10 @@ def start(conn_port, host_guid, connection_queue):
     server.bind(server_addr)
     _g_logger.info('TCP connection server socket created and configured')
 
+    # Save reference to the connection map
+    _g_connection_map = connection_map
+
     # Startup server's mainloop and return control to caller
     _g_mainloop_thread = threading.Thread(target=__mainloop,
-                                          args=(server,
-                                                conn_port,
-                                                host_guid,
-                                                connection_queue))
+                                          args=(server, host_guid))
     _g_mainloop_thread.start()
