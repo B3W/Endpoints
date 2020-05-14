@@ -2,6 +2,8 @@
 Module providing server listening for Enpoint conversation connections.
 Server runs on a separate thread from caller.
 """
+import datapassing
+from shared import datapassing_protocol as dp_proto
 import logging
 from message import msg, msgprotocol
 from network import netprotocol
@@ -12,66 +14,28 @@ import threading
 _g_logger = logging.getLogger(__name__)
 
 
-def report_connection(net_id, sock):
-    '''
-    '''
-    global _g_inputs
-    global _g_connection_map
-
-    # Add socket to 'select' logic
-    _g_inputs.append(sock)
-
-    # Record active connection {GUID: (name, socket)}
-    _g_connection_map[net_id.guid] = (net_id.name, sock)
-
-    # TODO Report connection to the UI
-
-
-def send_msg(guid, message):
-    '''
-    '''
-    global _g_outputs
-
-    # TODO
+def send_msg():
+    ''''''
+    # TODO Construct network message
+    # TODO Queue message to be sent over appropriate socket
     pass
 
 
-def kill():
-    '''
-    Gracefully stops the connection server and attempts to
-    release thread resources.
-    '''
-    # Server is only killable if it has been started
-    try:
-        # 'start' called at least once but thread is inactive
-        if not _g_mainloop_thread.is_alive():
-            _g_logger.critical('Attempted to kill connection server'
-                               ' which has already terminated')
+def __notify_ui_of_connection(net_id):
+    '''Passes connection information to UI'''
+    # Report connection to the UI
+    ui_message = dp_proto.DPConnectionMsg(net_id.guid, net_id.name)
+    datapassing.pass_msg(ui_message)
 
-            raise RuntimeError('Cannot kill connection server'
-                               ' which has already terminated')
-    except NameError:
-        # 'start' never called so _g_mainloop_thread not defined
-        _g_logger.critical('Attempted to kill connection server'
-                           ' which has not been started')
 
-        raise RuntimeError('Cannot kill connection server'
-                           ' which has not been started')
-
-    thread_join_timeout = 1.0  # Timeout (in sec.) for joining thread
-
-    # Signal mainloop to exit
-    _g_kill_sock.send(b'1')
-    _g_kill_sock.close()
-
-    _g_logger.info('Kill signal sent to connection server')
-
-    # Attempt to join mainloop thread
-    _g_mainloop_thread.join(timeout=thread_join_timeout)
-
-    # Check if thread was joined in time
-    if _g_mainloop_thread.is_alive():
-        _g_logger.error('Unable to join connection server\'s thread')
+def __notify_ui_of_text_data(guid, timestamp, data):
+    '''Passes text data to UI'''
+    # Report text data to UI
+    ui_message = dp_proto.DPTextMsg(dp_proto.DPMsgDst.DPMSG_DST_UI,
+                                    guid,
+                                    timestamp,
+                                    data)
+    datapassing.pass_msg(ui_message)
 
 
 def __cleanup(sockets):
@@ -129,36 +93,39 @@ def __process_rx_data(addr, data, sock, host_guid):
             return
 
         # Extract message type of the packet's payload
-        payload = net_pkt.msg_payload
-        msg_type = msgprotocol.decode_msgtype(payload)
+        msg_type = msgprotocol.decode_msgtype(net_pkt.msg_payload)
 
         if msg_type == msg.MsgType.ENDPOINT_CONNECTION_START:
             # A connection was accepted
             _g_logger.info("Connection accepted")
 
-            net_id = msg.decode_payload(payload)
+            message = msgprotocol.deserialize(net_pkt.msg_payload)
+            net_id = msg.decode_payload(message)
 
             if net_id.guid not in _g_connection_map:
-                # TODO Notify UI of a new connection
-                pass
+                __notify_ui_of_connection(net_id)
 
             # Record/Update active connection {GUID: (name, socket)}
             _g_connection_map[net_id.guid] = (net_id.name, sock)
 
-        elif msg_type == msg.MsgType.ENDPOINT_COMMUNICATION:
-            # A connection sent a message
-            _g_logger.info("Message received")
+        elif msg_type == msg.MsgType.ENDPOINT_TEXT_COMMUNICATION:
+            # A connection sent text data
+            _g_logger.info("Text data received")
 
-            # message = msg.decode_payload(payload)
+            message = msgprotocol.deserialize(net_pkt.msg_payload)
+            text_data = msg.decode_payload(message)
 
-            # TODO Report message to the UI
+            __notify_ui_of_text_data(net_pkt.src, message.timestamp, text_data)
             pass
 
         elif msg_type == msg.MsgType.ENDPOINT_DISCONNECTION:
             # A connection is getting disconnected
             _g_logger.info("Disconnection reported")
 
-            net_id = msg.decode_payload(payload)
+            message = msgprotocol.deserialize(net_pkt.msg_payload)
+            net_id = msg.decode_payload(message)
+
+            # TODO Report disconnection to UI
 
             # Close the connection
             _g_inputs.remove(sock)
@@ -289,3 +256,41 @@ def start(conn_port, host_guid, connection_map):
     _g_mainloop_thread = threading.Thread(target=__mainloop,
                                           args=(server, host_guid))
     _g_mainloop_thread.start()
+
+
+def kill():
+    '''
+    Gracefully stops the connection server and attempts to
+    release thread resources.
+    '''
+    # Server is only killable if it has been started
+    try:
+        # 'start' called at least once but thread is inactive
+        if not _g_mainloop_thread.is_alive():
+            _g_logger.critical('Attempted to kill connection server'
+                               ' which has already terminated')
+
+            raise RuntimeError('Cannot kill connection server'
+                               ' which has already terminated')
+    except NameError:
+        # 'start' never called so _g_mainloop_thread not defined
+        _g_logger.critical('Attempted to kill connection server'
+                           ' which has not been started')
+
+        raise RuntimeError('Cannot kill connection server'
+                           ' which has not been started')
+
+    thread_join_timeout = 1.0  # Timeout (in sec.) for joining thread
+
+    # Signal mainloop to exit
+    _g_kill_sock.send(b'1')
+    _g_kill_sock.close()
+
+    _g_logger.info('Kill signal sent to connection server')
+
+    # Attempt to join mainloop thread
+    _g_mainloop_thread.join(timeout=thread_join_timeout)
+
+    # Check if thread was joined in time
+    if _g_mainloop_thread.is_alive():
+        _g_logger.error('Unable to join connection server\'s thread')

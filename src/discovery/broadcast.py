@@ -74,8 +74,9 @@ def execute(port, src_guid, net_id):
     _g_logger.info('Broadcasting IPs retrieved')
 
     # Construct broadcasting message
-    broadcast_msg = msg.construct(msg.MsgType.ENDPOINT_CONNECTION_BROADCAST,
-                                  net_id)
+    broadcast_msg = msg.Msg(msg.MsgType.ENDPOINT_CONNECTION_BROADCAST,
+                            net_id)
+
     _g_logger.debug(f'Constructed broadcast message: {broadcast_msg}')
 
     # Send out broadcasts

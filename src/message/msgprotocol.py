@@ -1,6 +1,7 @@
 """
 Module defining the protocol for serializing and deserializing messages.
 """
+from shared import config as c
 from message import msg
 import struct
 
@@ -8,6 +9,7 @@ import struct
 _g_NET_FMT = '!'   # Network(big-endian) byte ordering for packing/unpacking
 _g_LEN_PREF_FMT = 'H'  # Length-prefix formatting (2 bytes alloted)
 _g_MSG_TYPE_FMT = 'B'  # Msg type flag formatting (1 byte alloted)
+_g_TIMESTAMP_FMT = f'{msg.Msg.TIMESTAMP_SZ_BYTES}s'  # ISO timestamp formatting
 
 # Bytes alloted for length prefix
 g_LEN_PREF_SZ_BYTES = struct.calcsize(_g_LEN_PREF_FMT)
@@ -15,13 +17,15 @@ g_LEN_PREF_SZ_BYTES = struct.calcsize(_g_LEN_PREF_FMT)
 g_MSG_TYPE_SZ_BYTES = struct.calcsize(_g_MSG_TYPE_FMT)
 
 # Msg 'header' format
-g_MSG_HEADER_FMT = _g_NET_FMT + _g_LEN_PREF_FMT + _g_MSG_TYPE_FMT
+g_MSG_HEADER_FMT = _g_NET_FMT           \
+                 + _g_LEN_PREF_FMT      \
+                 + _g_MSG_TYPE_FMT      \
+                 + _g_TIMESTAMP_FMT
+
 # Size of msg 'header'
 g_HEADER_SZ_BYTES = struct.calcsize(g_MSG_HEADER_FMT)
 
 variable_data_fmt = '%ds'  # Format for variable message data
-
-# TODO: Add checksum onto end of packet
 
 pack_fmt = g_MSG_HEADER_FMT + variable_data_fmt  # Packing format
 unpack_fmt = g_MSG_HEADER_FMT + variable_data_fmt  # Unpacking format
@@ -35,13 +39,21 @@ def serialize(message):
 
     :returns: Bytes object representing message to send
     """
-    dynamic_fmt = pack_fmt % (len(message))
+    # Encode the timestamp and payload
+    encoded_timestamp \
+        = message.timestamp.encode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
+
+    encoded_payload = msg.encode_payload(message.msg_type, message.payload)
+
+    # Construct packing format
+    dynamic_fmt = pack_fmt % (len(encoded_payload))
     msg_sz = struct.calcsize(dynamic_fmt)
 
     return struct.pack(dynamic_fmt,
                        msg_sz,
                        message.msg_type.value,
-                       message.payload)
+                       encoded_timestamp,
+                       encoded_payload)
 
 
 def deserialize(byte_data):
@@ -56,12 +68,19 @@ def deserialize(byte_data):
     if not is_valid_msg(byte_data):
         raise ValueError('Attempt to deserialize invalid message')
 
+    # Calculate the size of the payload and construct unpacking format
     payload_sz = len(byte_data) - g_HEADER_SZ_BYTES
     dynamic_fmt = unpack_fmt % (payload_sz)
 
-    msg_len, raw_msg_type, payload = struct.unpack(dynamic_fmt, byte_data)
+    # Unpack the binary data
+    msg_len, raw_msg_type, raw_timestamp, raw_payload \
+        = struct.unpack(dynamic_fmt, byte_data)
 
-    return msg.Msg(msg.MsgType(raw_msg_type), payload)
+    msg_type = msg.MsgType(raw_msg_type)
+    payload = msg.decode_payload(msg_type, raw_payload)
+    timestamp = raw_timestamp.decode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
+
+    return msg.Msg(msg_type, payload, timestamp)
 
 
 def __get_raw_msg_type(byte_data):
@@ -127,10 +146,10 @@ def decode_msgtype(byte_data):
 # Unit Testing
 def test():
     # Construct message
-    mt = msg.MsgType.ENDPOINT_COMMUNICATION
-    data = 'this is a payload'.encode()
+    mt = msg.MsgType.ENDPOINT_TEXT_COMMUNICATION
+    data = 'this is a payload'
 
-    message = msg.construct(mt, data)
+    message = msg.Msg(mt, data)
 
     print('Message Pre-serialization')
     print(message)

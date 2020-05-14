@@ -12,44 +12,6 @@ import threading
 _g_logger = logging.getLogger(__name__)
 
 
-def kill():
-    '''
-    Gracefully stops the broadcast server and attempts to
-    release thread resources.
-    '''
-    # Server is only killable if it has been started
-    try:
-        # 'start' called at least once but thread is inactive
-        if not _g_mainloop_thread.is_alive():
-            _g_logger.critical('Attempted to kill broadcast server'
-                               ' which has already terminated')
-
-            raise RuntimeError('Cannot kill broadcast server'
-                               ' which has already terminated')
-    except NameError:
-        # 'start' never called so _g_mainloop_thread not defined
-        _g_logger.critical('Attempted to kill broadcast server'
-                           ' which has not been started')
-
-        raise RuntimeError('Cannot kill broadcast server'
-                           ' which has not been started')
-
-    thread_join_timeout = 1.0  # Timeout (in sec.) for joining thread
-
-    # Signal mainloop to exit
-    _g_kill_sock.send(b'1')
-    _g_kill_sock.close()
-
-    _g_logger.info('Kill signal sent to broadcast server')
-
-    # Attempt to join mainloop thread
-    _g_mainloop_thread.join(timeout=thread_join_timeout)
-
-    # Check if thread was joined in time
-    if _g_mainloop_thread.is_alive():
-        _g_logger.error('Unable to join broadcast server\'s thread')
-
-
 def __cleanup(sockets):
     '''
     Releases socket resources
@@ -192,7 +154,7 @@ def __mainloop(server, bcast_port, host_guid, request_queue):
 
                     # Report device connection request
                     connection = (net_pkt.src, rx_addr, net_id.name)
-                    request_queue.put(connection)
+                    # TODO
 
                     __clear_buffer(data_buffer, rx_addr)
 
@@ -271,3 +233,41 @@ def start(bcast_port, host_guid, request_queue):
                                                 host_guid,
                                                 request_queue))
     _g_mainloop_thread.start()
+
+
+def kill():
+    '''
+    Gracefully stops the broadcast server and attempts to
+    release thread resources.
+    '''
+    # Server is only killable if it has been started
+    try:
+        # 'start' called at least once but thread is inactive
+        if not _g_mainloop_thread.is_alive():
+            _g_logger.critical('Attempted to kill broadcast server'
+                               ' which has already terminated')
+
+            raise RuntimeError('Cannot kill broadcast server'
+                               ' which has already terminated')
+    except NameError:
+        # 'start' never called so _g_mainloop_thread not defined
+        _g_logger.critical('Attempted to kill broadcast server'
+                           ' which has not been started')
+
+        raise RuntimeError('Cannot kill broadcast server'
+                           ' which has not been started')
+
+    thread_join_timeout = 1.0  # Timeout (in sec.) for joining thread
+
+    # Signal mainloop to exit
+    _g_kill_sock.send(b'1')
+    _g_kill_sock.close()
+
+    _g_logger.info('Kill signal sent to broadcast server')
+
+    # Attempt to join mainloop thread
+    _g_mainloop_thread.join(timeout=thread_join_timeout)
+
+    # Check if thread was joined in time
+    if _g_mainloop_thread.is_alive():
+        _g_logger.error('Unable to join broadcast server\'s thread')

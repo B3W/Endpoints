@@ -1,6 +1,6 @@
-"""
+'''
 Module defining message structure and message types.
-"""
+'''
 from shared import config as c
 import enum
 from network import netid
@@ -8,9 +8,7 @@ from network import netid
 
 @enum.unique
 class MsgType(enum.Enum):
-    """
-    Enum of supported message types.
-    """
+    '''Enum of supported message types'''
     # Specifying integer type instead of auto for
     # struct.pack/struct.unpack formatting scheme
 
@@ -21,7 +19,7 @@ class MsgType(enum.Enum):
     # Message broadcast to connected Enpoints when an Endpoint disconnects
     ENDPOINT_DISCONNECTION = 3
     # Message for sending user communication between Endpoints
-    ENDPOINT_COMMUNICATION = 4
+    ENDPOINT_TEXT_COMMUNICATION = 4
     # Acknowledgement that communication succeeded
     ENDPOINT_COMMUNICATION_ACK = 5
 
@@ -29,10 +27,10 @@ class MsgType(enum.Enum):
 
 
 class Msg(object):
-    """
-    Structure representing message to be sent between Endpoints
-    """
-    def __init__(self, msg_type, payload):
+    '''Structure representing message to be sent between Endpoints'''
+    TIMESTAMP_SZ_BYTES = 19  # Length of ISO formatted time string
+
+    def __init__(self, msg_type, payload, timestamp="0000-00-00T00:00:00"):
         """
         Initialization for message
 
@@ -40,24 +38,18 @@ class Msg(object):
         :param payload: Message data as 'bytes' object
         """
         self.msg_type = msg_type
+        self.timestamp = timestamp
         self.payload = payload
 
-    def __len__(self):
-        """
-        Gets the length of the message
-
-        :returns: Length of message payload
-        """
-        return len(self.payload)
-
     def __repr__(self):
-        return '<%s type:%s payload:%s>' \
-            % (self.__class__.__name__, self.msg_type.name, self.payload)
+        return '<%s type:%s timestamp:%s payload:%s>' \
+            % (self.__class__.__name__,
+               self.msg_type.name, self.timestamp, self.payload)
 
     def __str__(self):
-        return '<\'%s\' Object Type:%s Payload:%s Len:%d>' \
-            % (self.__class__.__name__, self.msg_type.name,
-               self.payload, self.__len__())
+        return '<\'%s\' Object Type:%s Timestamp:%s Payload:%s>' \
+            % (self.__class__.__name__,
+               self.msg_type.name, self.timestamp, self.payload)
 
 
 # Used for validation of MsgType
@@ -65,25 +57,20 @@ CONNECTION_MSG_TYPES = [MsgType.ENDPOINT_CONNECTION_BROADCAST,
                         MsgType.ENDPOINT_CONNECTION_START,
                         MsgType.ENDPOINT_DISCONNECTION]
 
-COMMUNICATION_MSG_TYPES = [MsgType.ENDPOINT_COMMUNICATION,
+COMMUNICATION_MSG_TYPES = [MsgType.ENDPOINT_TEXT_COMMUNICATION,
                            MsgType.ENDPOINT_COMMUNICATION_ACK]
 
 
-def construct(msg_type, payload):
-    '''
-    Constructs appropriate message based on given arguments
-    '''
-    byte_data = payload
-
+def encode_payload(msg_type, payload):
+    '''Encodes the message's payload'''
     if msg_type in CONNECTION_MSG_TYPES:
         # Payload is a NetID object
-        byte_data = netid.tobytes(payload)
+        return netid.tobytes(payload)
 
     elif msg_type in COMMUNICATION_MSG_TYPES:
         # Payload is a string or bytes object
         try:
-            byte_data \
-                = payload.encode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
+            return payload.encode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
 
         except AttributeError:
             # Bytes object so no need to encode
@@ -92,43 +79,38 @@ def construct(msg_type, payload):
     else:
         raise ValueError(f'{str(msg_type)} is not a supported MsgType')
 
-    return Msg(msg_type, byte_data)
+    return payload
 
 
-def decode_payload(message):
-    '''
-    Returns the payload decoded to the correct object
-
-    :param message: Msg object to decode the payload
-    :return: Msg's decoded payload
-    '''
-    if message.msg_type in CONNECTION_MSG_TYPES:
+def decode_payload(msg_type, raw_payload):
+    '''Returns the payload decoded to the correct object'''
+    if msg_type in CONNECTION_MSG_TYPES:
         # Payload is a NetID object
-        return netid.frombytes(message.payload)
+        return netid.frombytes(raw_payload)
 
-    elif message.msg_type in COMMUNICATION_MSG_TYPES:
+    elif msg_type in COMMUNICATION_MSG_TYPES:
         # Payload is a string or bytes object
-        return message.payload.decode(
-            c.Config.get(c.ConfigEnum.BYTE_ENCODING))
+        return raw_payload.decode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
 
     else:
         raise ValueError('%s is not a supported MsgType'
-                         % (str(message.msg_type)))
+                         % (str(msg_type)))
 
 
 # Unit Testing
 def test():
     # Construct message
-    mt = MsgType.ENDPOINT_COMMUNICATION
+    mt = MsgType.ENDPOINT_TEXT_COMMUNICATION
     data = 'this is data'
 
-    message = construct(mt, data)
+    message = Msg(mt, data)
 
     # Check relevant info
     print(repr(message))
     print(message)
     print()
 
-    data = decode_payload(message)
+    enc_payload = encode_payload(message.msg_type, message.payload)
+    data = decode_payload(message.msg_type, enc_payload)
     print('Decoded message payload:')
     print(data)

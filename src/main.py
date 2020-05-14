@@ -2,6 +2,7 @@
 from connection import connection_manager
 from discovery import broadcast, broadcast_listener
 import errno
+import gui
 import logging
 from network import netid
 import os
@@ -103,13 +104,14 @@ if __name__ == '__main__':
     broadcast_listener.start(broadcast_port, host_guid, connection_bcast_queue)
     logger.info('Broadcast listener service started')
 
-    # TODO Start UI -> Backend queue message handler
+    # TODO Start data passing layer for getting data to/from the UI
 
     # Broadcast discovery message over network adapters
     broadcast.execute(broadcast_port, host_guid, host_netid)
     logger.info('Discovery message broadcasting complete')
 
-    # TODO Start up UI in main thread
+    # Start up UI in main thread
+    # gui.start(host_guid, backend_queue)
 
     # Shutdown
     broadcast_listener.kill()

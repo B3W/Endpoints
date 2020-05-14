@@ -1,6 +1,6 @@
 import conversationframe as cf
 import menubar as mb
-from shared import queueprotocol as qp
+from shared import datapassing_protocol as dp_proto
 import sidebar as sb
 import tkinter as tk
 from tkinter import ttk
@@ -66,17 +66,17 @@ class EndpointUI(ttk.Frame):
             # Retrieve and decode data from queue
             qdata = data_q.get_nowait()
 
-            if qdata.type == qp.QDataType.TEXT_MSG:
+            if qdata.type == dp_proto.DPMsgType.DPMSG_TYPE_TEXT_MSG:
                 # Report message to the ConversationFrame
-                self.convo_mgr.report_text_message(qdata.ident,
+                self.convo_mgr.report_text_message(qdata.destination_id,
                                                    qdata.timestamp,
                                                    qdata.data)
                 data_q.task_done()  # Mark complete
 
-            elif qdata.type == qp.QDataType.CONNECTION:
+            elif qdata.type == dp_proto.DPMsgType.DPMSG_TYPE_CONNECTION:
                 # Report connection to Sidebar and ConversationFrame
-                self.side_panel.report_connection(qdata.ident,
-                                                  qdata.name)
+                self.side_panel.report_connection(qdata.endpoint_id,
+                                                  qdata.endpoint_name)
                 data_q.task_done()  # Mark complete
 
         except queue.Empty:

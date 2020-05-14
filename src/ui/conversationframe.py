@@ -3,7 +3,7 @@
 import messageframe as mf
 import queue
 from shared import timeutils as tu
-from shared import queueprotocol as qp
+from shared import datapassing_protocol as dp_proto
 import tkinter as tk
 from tkinter import ttk
 
@@ -122,7 +122,11 @@ class ConversationFrame(ttk.Frame):
         if self.active_conversation and msg:
             # Construct message to send
             ts = tu.get_timestamp()
-            msg = qp.TextMsg(self.host_id, ts, msg)
+
+            msg = dp_proto.DPTextMsg(dp_proto.DPMsgDst.DPMSG_DST_BACKEND,
+                                     self.host_id,
+                                     ts,
+                                     msg)
 
             try:
                 # Push into sending queue
