@@ -2,6 +2,7 @@
 Module providing server for responding to Enpoint broadcasts over LAN.
 Server runs on a separate thread from caller.
 """
+import connection_manager
 import logging
 from message import msg, msgprotocol
 from network import netprotocol
@@ -142,25 +143,27 @@ def __mainloop(server, bcast_port, host_guid, request_queue):
                     continue
 
                 # Determine the message type of the packet's payload
-                pkt_msg = net_pkt.msg_payload
-                msg_type = msgprotocol.decode_msgtype(pkt_msg)
+                message = msgprotocol.deserialize(net_pkt.msg_payload)
 
-                if msg_type == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST:
+                if message.msg_type \
+                   == msg.MsgType.ENDPOINT_CONNECTION_BROADCAST:
+
                     # Received connection broadcast from another Endpoint
                     _g_logger.info('Connection broadcast received')
 
                     # Extract information from message
-                    net_id = msg.decode_payload(pkt_msg)
+                    net_id = message.payload
 
                     # Report device connection request
-                    connection = (net_pkt.src, rx_addr, net_id.name)
-                    # TODO
+                    connection_manager.attempt_connection(rx_addr,
+                                                          net_id.guid,
+                                                          net_id.name)
 
                     __clear_buffer(data_buffer, rx_addr)
 
                 else:
                     _g_logger.error('Invalid broadcast payload type: %s'
-                                    % msg_type)
+                                    % message.msg_type)
 
             elif s is _g_recv_kill_sock:
                 _g_logger.info('Broadcast server received kill signal')

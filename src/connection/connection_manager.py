@@ -1,12 +1,13 @@
 """
-Module providing server listening for Enpoint conversation connections.
+Module providing server for managing Endpoint connections.
 Server runs on a separate thread from caller.
 """
 import datapassing
 from shared import datapassing_protocol as dp_proto
 import logging
 from message import msg, msgprotocol
-from network import netprotocol
+from network import netpacket, netprotocol
+import queue
 import select
 import socket
 import threading
@@ -14,27 +15,70 @@ import threading
 _g_logger = logging.getLogger(__name__)
 
 
-def send_msg():
+class Connection(object):
+    '''Class defining all data related to a connection'''
+    def __init__(self, name, sock):
+        self.friendly_name = name
+        self.tcp_socket = sock
+        self.outmsg_queue = queue.Queue()
+
+
+def send_text_msg(text_message):
     ''''''
-    # TODO Construct network message
-    # TODO Queue message to be sent over appropriate socket
+    dst_guid = text_message.destination_id
+
+    if dst_guid == _g_HOST_GUID:
+        _g_logger.error("Tried to send text message to self")
+        return
+
+    # Construct Endpoint message
+    endpoint_msg = msg.Msg(msg.MsgType.ENDPOINT_TEXT_COMMUNICATION,
+                           text_message.data,
+                           text_message.timestamp)
+
+    encoded_msg = msgprotocol.serialize(endpoint_msg)
+
+    # Construct network message
+    net_pkt = netpacket.NetPacket(_g_HOST_GUID, dst_guid, encoded_msg)
+
+    encoded_pkt = netprotocol.serialize(net_pkt)
+
+    # Queue message to be sent over appropriate socket
+    try:
+        connection = _g_connection_map[dst_guid]
+        connection.outmsg_queue.put_nowait(encoded_pkt)
+
+        if connection.tcp_socket not in _g_outputs:
+            _g_outputs.append(connection.tcp_socket)
+
+    except queue.Full:
+        _g_logger.error("Unable to send text message")
+
+
+def attempt_connection(dst_addr, dst_guid, dst_name):
+    '''Attempts to make a TCP connection at the given address'''
+    # TODO
     pass
 
 
 def __notify_ui_of_connection(net_id):
     '''Passes connection information to UI'''
-    # Report connection to the UI
     ui_message = dp_proto.DPConnectionMsg(net_id.guid, net_id.name)
     datapassing.pass_msg(ui_message)
 
 
 def __notify_ui_of_text_data(guid, timestamp, data):
     '''Passes text data to UI'''
-    # Report text data to UI
     ui_message = dp_proto.DPTextMsg(dp_proto.DPMsgDst.DPMSG_DST_UI,
                                     guid,
                                     timestamp,
                                     data)
+    datapassing.pass_msg(ui_message)
+
+
+def __notify_ui_of_disconnect(net_id):
+    '''Notifies UI that an Endpoint has disconnected'''
+    ui_message = dp_proto.DPDisconnectMsg(net_id.guid)
     datapassing.pass_msg(ui_message)
 
 
@@ -48,7 +92,7 @@ def __cleanup(sockets):
         s.close()
 
 
-def __validate_pkt(rx_data, host_guid):
+def __validate_pkt(rx_data):
     '''
     '''
     valid = True
@@ -69,14 +113,14 @@ def __validate_pkt(rx_data, host_guid):
 
     # Sanity check sender's GUID
     if valid:
-        if net_pkt.src == host_guid:
+        if net_pkt.src == _g_HOST_GUID:
             valid = False
             _g_logger.error(f'Connection received from self: {net_pkt}')
 
     return net_pkt, valid
 
 
-def __process_rx_data(addr, data, sock, host_guid):
+def __process_rx_data(addr, data, sock):
     '''
     '''
     global _g_inputs
@@ -84,11 +128,9 @@ def __process_rx_data(addr, data, sock, host_guid):
 
     if data:
         # Make sure received data is a valid packet
-        net_pkt, valid = __validate_pkt(data, host_guid)
+        net_pkt, valid = __validate_pkt(data)
 
         if not valid:
-            _g_inputs.remove(sock)
-            sock.close()
             _g_logger.error("Received invalid packet")
             return
 
@@ -100,20 +142,21 @@ def __process_rx_data(addr, data, sock, host_guid):
             _g_logger.info("Connection accepted")
 
             message = msgprotocol.deserialize(net_pkt.msg_payload)
-            net_id = msg.decode_payload(message)
+            net_id = message.payload
 
             if net_id.guid not in _g_connection_map:
                 __notify_ui_of_connection(net_id)
 
             # Record/Update active connection {GUID: (name, socket)}
-            _g_connection_map[net_id.guid] = (net_id.name, sock)
+            connection = Connection(net_id.name, sock)
+            _g_connection_map[net_id.guid] = connection
 
         elif msg_type == msg.MsgType.ENDPOINT_TEXT_COMMUNICATION:
             # A connection sent text data
             _g_logger.info("Text data received")
 
             message = msgprotocol.deserialize(net_pkt.msg_payload)
-            text_data = msg.decode_payload(message)
+            text_data = message.payload
 
             __notify_ui_of_text_data(net_pkt.src, message.timestamp, text_data)
             pass
@@ -123,9 +166,10 @@ def __process_rx_data(addr, data, sock, host_guid):
             _g_logger.info("Disconnection reported")
 
             message = msgprotocol.deserialize(net_pkt.msg_payload)
-            net_id = msg.decode_payload(message)
+            net_id = message.payload
 
-            # TODO Report disconnection to UI
+            # Report disconnection to UI
+            __notify_ui_of_disconnect(net_id)
 
             # Close the connection
             _g_inputs.remove(sock)
@@ -142,12 +186,11 @@ def __process_rx_data(addr, data, sock, host_guid):
         sock.close()
 
 
-def __mainloop(server, host_guid):
+def __mainloop(server):
     '''
     Connection server's mainloop (should be run in separate thread)
 
     :param server: Server socket for detecting connections
-    :param host_guid: GUID of local machine
     '''
     _g_logger.info('Connection server\'s mainloop started')
 
@@ -186,12 +229,29 @@ def __mainloop(server, host_guid):
                 _g_logger.info('Connection server received \'%s\' from \'%s\'',
                                rx_data, rx_addr)
 
-                __process_rx_data(rx_addr, rx_data, s, host_guid)
+                __process_rx_data(rx_addr, rx_data, s)
 
         # Writable sockets have data ready to be sent
         for s in writable:
-            # TODO
-            pass
+            msg_queue = None
+
+            for g, c in _g_connection_map.items():
+                # Check if a connection is associated with this socket
+                if c.tcp_socket is s:
+                    # Get the message queue for that connection
+                    msg_queue = c.outmsg_queue
+                    break
+
+            if msg_queue is not None:
+                try:
+                    message = msg_queue.get_nowait()
+                except queue.Empty:
+                    _g_outputs.remove(s)
+                else:
+                    s.send(message)
+
+            else:
+                _g_outputs.remove(s)
 
         # Exceptional sockets experience 'exceptional condition'
         for s in exceptional:
@@ -221,12 +281,15 @@ def start(conn_port, host_guid, connection_map):
     :param host_guid: GUID of local machine
     :param connection_map: Dictionary for tracking active connections
     '''
+    global _g_HOST_GUID
     global _g_kill_sock
     global _g_recv_kill_sock
     global _g_mainloop_thread
     global _g_connection_map
 
     opt_val = 1  # For setting socket options
+
+    _g_HOST_GUID = host_guid
 
     # Create/Configure TCP socket pair for returning control from 'select'
     _g_kill_sock, _g_recv_kill_sock = socket.socketpair(family=socket.AF_INET)
@@ -253,8 +316,7 @@ def start(conn_port, host_guid, connection_map):
     _g_connection_map = connection_map
 
     # Startup server's mainloop and return control to caller
-    _g_mainloop_thread = threading.Thread(target=__mainloop,
-                                          args=(server, host_guid))
+    _g_mainloop_thread = threading.Thread(target=__mainloop, args=(server))
     _g_mainloop_thread.start()
 
 

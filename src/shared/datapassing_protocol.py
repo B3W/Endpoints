@@ -8,6 +8,7 @@ import enum
 class DPMsgType(enum.Enum):
     '''Enum defining possible types of queue messages'''
     DPMSG_TYPE_CONNECTION = enum.auto()
+    DPMSG_TYPE_DISCONNECT = enum.auto()
     DPMSG_TYPE_TEXT_MSG = enum.auto()
 
 
@@ -20,23 +21,23 @@ class DPMsgDst(enum.Enum):
 
 class DPMsg(object):
     '''Base data passing message class'''
-    def __init__(self, mtype, dst):
+    def __init__(self, mtype, mdst):
         '''
         :param mtype: Type of message
-        :param dst: Destination of the message
+        :param mdst: Destination of the message
         '''
         self.msg_type = mtype
-        self.destination = dst
+        self.destination = mdst
 
 
 class DPTextMsg(DPMsg):
     '''Data passing message containing text to send or receive'''
-    def __init__(self, dst, dst_id, timestamp, data):
+    def __init__(self, mdst, dst_id, timestamp, data):
         '''
-        :param dst: Layer that message should be passed to
+        :param mdst: Layer that message should be passed to
         :param dst_id: Endpoint's unique ID to send this message to
         '''
-        super().__init__(DPMsgType.DPMSG_TYPE_TEXT_MSG, dst)
+        super().__init__(DPMsgType.DPMSG_TYPE_TEXT_MSG, mdst)
         self.destination_id = dst_id
         self.timestamp = timestamp
         self.data = data
@@ -52,3 +53,14 @@ class DPConnectionMsg(DPMsg):
                          DPMsgDst.DPMSG_DST_UI)
         self.endpoint_id = ep_id
         self.endpoint_name = ep_name
+
+
+class DPDisconnectMsg(DPMsg):
+    '''Data passing message indicating an Endpoint disconnected'''
+    def __init__(self, ep_id):
+        '''
+        :param ep_id: Unique ID of Endpoint that disconnected
+        '''
+        super().__init__(DPMsgType.DPMSG_TYPE_DISCONNECT,
+                         DPMsgDst.DPMSG_DST_UI)
+        self.endpoint_id = ep_id

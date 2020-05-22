@@ -79,6 +79,11 @@ class EndpointUI(ttk.Frame):
                                                   qdata.endpoint_name)
                 data_q.task_done()  # Mark complete
 
+            elif qdata.type == dp_proto.DPMsgType.DPMSG_TYPE_DISCONNECT:
+                # Report disconnection to Sidebar and ConversationFrame
+                self.side_panel.remove_connection(qdata.endpoint_id)
+                data_q.task_done()  # Mark complete
+
         except queue.Empty:
             pass  # No data in queue
 

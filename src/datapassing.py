@@ -1,6 +1,7 @@
 '''
 Module providing service for passing data to and receiving data from the UI
 '''
+import connection_manager
 import logging
 from shared import datapassing_protocol as dp_proto
 import queue
@@ -22,7 +23,22 @@ def __process_connection_msg(message):
             _g_logger.error("Unable to pass connection message to UI")
 
     else:
-        _g_logger.error("Message had invalid destination")
+        _g_logger.error("Connection message had invalid destination")
+
+
+def __process_disconnect_msg(message):
+    '''Logic for processing a disconnect message'''
+    mdst = message.destination
+
+    if mdst == dp_proto.DPMsgDst.DPMSG_DST_UI:
+        # Pass connection message to UI
+        try:
+            _g_ui_queue.put_nowait(message)
+        except queue.Full:
+            _g_logger.error("Unable to pass disconnect message to UI")
+
+    else:
+        _g_logger.error("Disconnect message had invalid destination")
 
 
 def __process_text_msg(message):
@@ -37,8 +53,8 @@ def __process_text_msg(message):
             _g_logger.error("Unable to pass text message to UI")
 
     elif mdst == dp_proto.DPMsgDst.DPMSG_DST_BACKEND:
-        # TODO Pass text message to Backend
-        pass
+        # Pass text message to Backend
+        connection_manager.send_text_msg(message)
 
     else:
         _g_logger.error("Message had invalid destination")
@@ -50,6 +66,9 @@ def __process_msg(message):
 
     if mtype == dp_proto.DPMsgType.DPMSG_TYPE_CONNECTION:
         __process_connection_msg(message)
+
+    if mtype == dp_proto.DPMsgType.DPMSG_TYPE_DISCONNECT:
+        __process_disconnect_msg(message)
 
     elif mtype == dp_proto.DPMsgType.DPMSG_TYPE_TEXT_MSG:
         __process_text_msg(message)
