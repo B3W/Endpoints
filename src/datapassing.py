@@ -1,7 +1,7 @@
 '''
 Module providing service for passing data to and receiving data from the UI
 '''
-import connection_manager
+from connection import connection_manager as cm
 import logging
 from shared import datapassing_protocol as dp_proto
 import queue
@@ -54,7 +54,7 @@ def __process_text_msg(message):
 
     elif mdst == dp_proto.DPMsgDst.DPMSG_DST_BACKEND:
         # Pass text message to Backend
-        connection_manager.send_text_msg(message)
+        cm.send_text_msg(message)
 
     else:
         _g_logger.error("Message had invalid destination")

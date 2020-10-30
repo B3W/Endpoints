@@ -6,17 +6,19 @@ import json
 import os
 
 
+# ** When adding settings to configuration only this enum and the 'KEY_MAP' **
+# ** dictionary need edited                                                 **
 @enum.unique
 class ConfigEnum(enum.Enum):
     '''Enum providing friendly names for configurations'''
-    RX_PORT = enum.auto()
+    CONNECTION_PORT = enum.auto()
     BYTE_ENCODING = enum.auto()
     ENDPOINT_GUID = enum.auto()
     ENDPOINT_NAME = enum.auto()
+    BROADCASE_PORT = enum.auto()
 
 
 # Dictionary for conversion between enum and JSON field name
-# ***When adding settings to configuration only this dictionary needs edited***
 KEY_MAP = {
     ConfigEnum.CONNECTION_PORT: 'tcp_connection_port',
     ConfigEnum.BYTE_ENCODING: 'byte_encoding',
@@ -90,14 +92,14 @@ if __name__ == '__main__':
     Config.load()
 
     print('Init Config')
-    print('RX Port: %d' % (Config.get(ConfigEnum.RX_PORT)))
+    print('RX Port: %d' % (Config.get(ConfigEnum.CONNECTION_PORT)))
     print('Byte Encoding: %s\n' % (Config.get(ConfigEnum.BYTE_ENCODING)))
 
-    Config.set(ConfigEnum.RX_PORT, 40000)
+    Config.set(ConfigEnum.CONNECTION_PORT, 40000)
     Config.set(ConfigEnum.BYTE_ENCODING, 'utf-16')
 
     print('Config After Set')
-    print('RX Port: %d' % (Config.get(ConfigEnum.RX_PORT)))
+    print('RX Port: %d' % (Config.get(ConfigEnum.CONNECTION_PORT)))
     print('Byte Encoding: %s\n' % (Config.get(ConfigEnum.BYTE_ENCODING)))
 
     # Config.write()
