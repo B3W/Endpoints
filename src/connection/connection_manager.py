@@ -6,9 +6,10 @@ import datapassing
 from shared import datapassing_protocol as dp_proto
 import logging
 from message import msg, msgprotocol
-from network import netpacket, netprotocol
+from network import netpacket, netprotocol, netid
 import queue
 import select
+from shared import config as c
 import socket
 import threading
 
@@ -38,7 +39,7 @@ def send_text_msg(text_message):
 
     encoded_msg = msgprotocol.serialize(endpoint_msg)
 
-    # Construct network message
+    # Construct network packet
     net_pkt = netpacket.NetPacket(_g_HOST_GUID, dst_guid, encoded_msg)
 
     encoded_pkt = netprotocol.serialize(net_pkt)
@@ -57,8 +58,45 @@ def send_text_msg(text_message):
 
 def attempt_connection(dst_addr, dst_guid, dst_name):
     '''Attempts to make a TCP connection at the given address'''
-    # TODO
-    pass
+    # Create socket for connection
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    # Attempt connection to destination
+    connection_addr = (dst_addr, _g_CONNECTION_PORT)
+    sock.connect(connection_addr)
+
+    # Record/Update active connection {GUID: (name, socket)}
+    if dst_guid not in _g_connection_map:
+        __notify_ui_of_connection(netid.NetID(dst_guid, dst_name))
+
+    connection = Connection(dst_name, sock)
+    _g_connection_map[dst_guid] = connection
+
+    sock.setblocking(False)
+    _g_inputs.append(sock)
+
+    # Construct Endpoint message
+    host_netid = netid.NetID(_g_HOST_GUID,
+                             c.Config.get(c.ConfigEnum.ENDPOINT_NAME))
+
+    connection_msg = msg.Msg(msg.MsgType.ENDPOINT_CONNECTION_START,
+                             host_netid)
+    serialized_msg = msgprotocol.serialize(connection_msg)
+
+    # Construct network packet
+    pkt = netpacket.NetPacket(_g_HOST_GUID, dst_guid, serialized_msg)
+    serialized_pkt = netprotocol.serialize(pkt)
+
+    # Queue message to be sent over appropriate socket
+    try:
+        connection.outmsg_queue.put_nowait(serialized_pkt)
+
+        if connection.tcp_socket not in _g_outputs:
+            _g_outputs.append(connection.tcp_socket)
+
+    except queue.Full:
+        _g_logger.error("Unable to send text message")
 
 
 def __notify_ui_of_connection(net_id):
@@ -144,10 +182,10 @@ def __process_rx_data(addr, data, sock):
             message = msgprotocol.deserialize(net_pkt.msg_payload)
             net_id = message.payload
 
+            # Record/Update active connection {GUID: (name, socket)}
             if net_id.guid not in _g_connection_map:
                 __notify_ui_of_connection(net_id)
 
-            # Record/Update active connection {GUID: (name, socket)}
             connection = Connection(net_id.name, sock)
             _g_connection_map[net_id.guid] = connection
 
@@ -214,7 +252,7 @@ def __mainloop(server):
                 # Accept connections
                 conn_sock, addr = s.accept()
 
-                # Wait for connections to report its GUID
+                # Connections will report their GUID with a message
                 conn_sock.setblocking(False)
                 _g_inputs.append(conn_sock)
 
@@ -235,11 +273,11 @@ def __mainloop(server):
         for s in writable:
             msg_queue = None
 
-            for g, c in _g_connection_map.items():
+            for guid, connection in _g_connection_map.items():
                 # Check if a connection is associated with this socket
-                if c.tcp_socket is s:
+                if connection.tcp_socket is s:
                     # Get the message queue for that connection
-                    msg_queue = c.outmsg_queue
+                    msg_queue = connection.outmsg_queue
                     break
 
             if msg_queue is not None:
@@ -286,7 +324,9 @@ def start(conn_port, host_guid, connection_map):
     global _g_recv_kill_sock
     global _g_mainloop_thread
     global _g_connection_map
+    global _g_CONNECTION_PORT
 
+    _g_CONNECTION_PORT = conn_port
     opt_val = 1  # For setting socket options
 
     _g_HOST_GUID = host_guid
@@ -303,7 +343,7 @@ def start(conn_port, host_guid, connection_map):
     _g_logger.info('Dummy TCP socket pair created and configured')
 
     # Create and configure TCP server socket to receive TCP connection requests
-    server_addr = ('', conn_port)  # Listen on all interfaces
+    server_addr = ('', _g_CONNECTION_PORT)  # Listen on all interfaces
 
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)

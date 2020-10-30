@@ -1,5 +1,6 @@
 '''Entry point for Endpoints application'''
 from connection import connection_manager
+import datapassing
 from discovery import broadcast, broadcast_listener
 import errno
 import gui
@@ -104,14 +105,15 @@ if __name__ == '__main__':
     broadcast_listener.start(broadcast_port, host_guid, connection_bcast_queue)
     logger.info('Broadcast listener service started')
 
-    # TODO Start data passing layer for getting data to/from the UI
+    # Start data passing layer for getting data to/from the UI
+    datapassing.start(ui_queue)
 
     # Broadcast discovery message over network adapters
     broadcast.execute(broadcast_port, host_guid, host_netid)
     logger.info('Discovery message broadcasting complete')
 
-    # Start up UI in main thread
-    # gui.start(host_guid, backend_queue)
+    # Start up UI in main thread (blocks until UI is exited)
+    gui.start(host_guid, backend_queue)
 
     # Shutdown
     broadcast_listener.kill()
