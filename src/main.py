@@ -15,7 +15,7 @@ from shared import timeutils
 import uuid
 
 
-if __name__ == '__main__':
+def main():
     # Get path to this module
     main_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -43,7 +43,11 @@ if __name__ == '__main__':
     c.Config.load(config_path)
 
     # Construct host's GUID
-    encoding = c.Config.get(c.ConfigEnum.BYTE_ENCODING).strip()
+    try:
+        encoding = c.Config.get(c.ConfigEnum.BYTE_ENCODING).strip()
+    except KeyError:
+        encoding = 'utf-8'  # Set default encoding
+        c.Config.set(c.ConfigEnum.BYTE_ENCODING, encoding)  # Write to config
 
     try:
         host_guid = c.Config.get(c.ConfigEnum.ENDPOINT_GUID)

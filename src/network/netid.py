@@ -10,7 +10,7 @@ class NetID(object):
     Structure representing Endpoint identification
     '''
     GUID_SZ_BYTES = 16  # GUIDs are 128-bit integers
-    GUID_PACK_FMT = GUID_SZ_BYTES + 's'  # GUID as bytes
+    GUID_PACK_FMT = f'{GUID_SZ_BYTES}s'  # GUID as bytes
     NAME_PACK_FMT = '%ds'  # Name string as bytes with dynamic length
     NETID_PACK_FMT = GUID_PACK_FMT + NAME_PACK_FMT  # Full format for packing
 
