@@ -15,7 +15,7 @@ class ConfigEnum(enum.Enum):
     BYTE_ENCODING = enum.auto()
     ENDPOINT_GUID = enum.auto()
     ENDPOINT_NAME = enum.auto()
-    BROADCASE_PORT = enum.auto()
+    BROADCAST_PORT = enum.auto()
 
 
 # Dictionary for conversion between enum and JSON field name
