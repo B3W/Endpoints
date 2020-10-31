@@ -41,8 +41,8 @@ def __buffer_data(data_buffer, rx_addr, rx_data):
         data_buffer[rx_addr] = rx_data
 
     # Extract packet's length field and compare
-    len_field = data_buffer[rx_addr][:netprotocol.g_LEN_PREF_SZ_BYTES]
-    pkt_len = socket.ntohs(len_field)
+    len_field_bytes = data_buffer[rx_addr][:netprotocol.g_LEN_PREF_SZ_BYTES]
+    pkt_len = int.from_bytes(len_field_bytes, byteorder='big')  # Network order
 
     if rx_data_len == pkt_len:
         # Received full message
