@@ -18,12 +18,16 @@ import uuid
 
 def main():
     '''Main method of Endpoints application'''
-    # Get path to this module
-    main_path = inspect.getfile(inspect.currentframe())
+    # Get path to the application's root folder
+    file_path = inspect.getfile(inspect.currentframe())
+    root_path = os.path.realpath(os.path.abspath(os.path.split(file_path)[0]))
 
     # Initialize logging module
-    log_name = 'Endpoint-Log-%s.log' % timeutils.get_iso_timestamp()
-    log_dir = os.path.join(main_path, '.logs')
+    timestamp = timeutils.get_iso_timestamp()
+    timestamp = timestamp.replace(':', '-')
+
+    log_name = 'Log_%s.log' % timestamp
+    log_dir = os.path.join(root_path, '.logs')
 
     try:
         os.makedirs(log_dir)
@@ -41,7 +45,7 @@ def main():
     logger = logging.getLogger(__name__)  # Retrieve module logger
 
     # Construct configuration path and load configuration
-    config_path = os.path.join(main_path, 'config.json')
+    config_path = os.path.join(root_path, 'config.json')
     c.Config.load(config_path)
 
     # Construct host's GUID
@@ -50,6 +54,8 @@ def main():
     except KeyError:
         encoding = 'utf-8'  # Set default encoding
         c.Config.set(c.ConfigEnum.BYTE_ENCODING, encoding)  # Write to config
+
+    logger.debug('Encoding: %s', encoding)
 
     try:
         host_guid = c.Config.get(c.ConfigEnum.ENDPOINT_GUID)
@@ -100,7 +106,6 @@ def main():
 
     # Initialize data passing queues
     connection_bcast_queue = queue.Queue()  # Broadcasted connection requests
-    backend_queue = queue.Queue()  # Data -> backend services
     ui_queue = queue.Queue()  # Data -> UI
 
     # Start TCP connection manager
@@ -119,7 +124,7 @@ def main():
     logger.info('Discovery message broadcasting complete')
 
     # Start up UI in main thread (blocks until UI is exited)
-    gui.start(host_guid, backend_queue)
+    gui.start(host_guid, ui_queue)
 
     # Shutdown
     cm.kill()

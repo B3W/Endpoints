@@ -1,7 +1,5 @@
 {
     "tcp_connection_port": 3434,
     "byte_encoding": "utf-8",
-    "endpoint_guid": "",
-    "endpoint_name": "",
     "udp_broadcast_port": 3434
 }

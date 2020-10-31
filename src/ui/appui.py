@@ -11,10 +11,9 @@ class EndpointUI(ttk.Frame):
     '''Top-level container for Endpoint UI'''
     _POLL_DELAY_MS = 200   # How often to poll data queue
 
-    def __init__(self, master, host_guid, in_q, out_q, *args, **kwargs):
+    def __init__(self, master, host_guid, in_q, *args, **kwargs):
         '''
         :param in_q: Queue for data coming from backend to GUI
-        :param out_q: Queue for passing data to backend from GUI
         '''
         # Initialize root window
         ttk.Frame.__init__(self, master, *args, **kwargs)
@@ -44,7 +43,7 @@ class EndpointUI(ttk.Frame):
         master.configure(menu=self.menu)
 
         # Configure main area
-        self.convo_mgr = cf.ConversationFrame(self, host_guid, out_q)
+        self.convo_mgr = cf.ConversationFrame(self, host_guid)
         self.convo_mgr.grid(column=1, row=0,
                             sticky=(tk.N, tk.S, tk.E, tk.W))
 

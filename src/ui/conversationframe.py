@@ -4,6 +4,7 @@ import messageframe as mf
 import queue
 import timeutils
 import datapassing_protocol as dproto
+import datapassing
 import tkinter as tk
 from tkinter import ttk
 
@@ -16,7 +17,7 @@ class ConversationFrame(ttk.Frame):
     _MSG_FRAME_X_PAD = (0, 10)  # 'X' pad around msg frame
     _MSG_FRAME_Y_PAD = (10, 10)  # 'Y' pad around msg frame
 
-    def __init__(self, master, host_id, send_q, *args, **kwargs):
+    def __init__(self, master, host_id, *args, **kwargs):
         '''
         :param master: The container holding this frame
         :param host_id: Unique id for the host running the application
@@ -32,7 +33,6 @@ class ConversationFrame(ttk.Frame):
         ttk.Frame.__init__(self, master, *args, **kwargs)
 
         self.host_id = host_id
-        self.send_q = send_q
         self.active_conversation = b''
 
         # Configure frame's grid
@@ -129,8 +129,8 @@ class ConversationFrame(ttk.Frame):
                                    msg)
 
             try:
-                # Push into sending queue
-                self.send_q.put_nowait(msg)
+                # Pass message to the backend
+                datapassing.pass_msg(msg)
 
                 # Display
                 fmt_ts = timeutils.format_timestamp(ts)
