@@ -359,7 +359,7 @@ def start(conn_port, host_guid, connection_map):
     _g_connection_map = connection_map
 
     # Startup server's mainloop and return control to caller
-    _g_mainloop_thread = threading.Thread(target=__mainloop, args=(server))
+    _g_mainloop_thread = threading.Thread(target=__mainloop, args=(server,))
     _g_mainloop_thread.start()
 
 
