@@ -2,7 +2,7 @@
 '''
 import autoscrollbar as asb
 import math
-import message as m
+import messagewidget as mw
 import tkinter as tk
 from tkinter import ttk
 
@@ -68,7 +68,7 @@ class MessageFrame(ttk.Frame):
             # Ignore empty messages
             return
 
-        text_msg = m.Message(self.msg_frame, timestamp)
+        text_msg = mw.MessageWidget(self.msg_frame, timestamp)
         text_msg.set_text(text)
 
         if ident == MessageFrame.host_id:
