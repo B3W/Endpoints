@@ -3,6 +3,7 @@ Module defining structure for Endpoint identifying information
 '''
 import config as c
 import struct
+import sys
 
 
 class NetID(object):
@@ -44,7 +45,11 @@ def tobytes(nid):
     enc_name = nid.name.encode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
     dynamic_fmt = NetID.NETID_PACK_FMT % (len(enc_name))
 
-    return struct.pack(dynamic_fmt, nid.guid, enc_name)
+    # Convert GUID to a bytes object of length 16
+    guid_bytes = nid.guid.to_bytes(NetID.GUID_SZ_BYTES,
+                                   byteorder=sys.byteorder)
+
+    return struct.pack(dynamic_fmt, guid_bytes, enc_name)
 
 
 # Use struct.pack so identifications of various data types
@@ -58,10 +63,11 @@ def frombytes(nid):
 
     # Construct format then unpack bytes
     unpack_fmt = NetID.NETID_PACK_FMT % (name_len)
-    guid, enc_name = struct.unpack(unpack_fmt, nid)
+    guid_bytes, enc_name = struct.unpack(unpack_fmt, nid)
 
     # Construct and return a NetID object
     name = enc_name.decode(c.Config.get(c.ConfigEnum.BYTE_ENCODING))
+    guid = int.from_bytes(guid_bytes, byteorder=sys.byteorder)
 
     return NetID(guid, name)
 

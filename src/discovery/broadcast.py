@@ -2,7 +2,6 @@
 Module providing functionality for broadcasting connection messages over the
 available network interfaces.
 """
-from concurrent.futures import ThreadPoolExecutor
 import logging
 import msg
 import msgprotocol
@@ -27,7 +26,7 @@ def __broadcast(data, src_id, dst_addr):
     # Construct netpacket
     serialized_msg = msgprotocol.serialize(data)
 
-    dst_id = netprotocol.g_GUID_SZ_BYTES * b'\x00'
+    dst_id = 0  # Broadcasting therfore no destination in particular
     pkt = netpacket.NetPacket(src_id, dst_id, serialized_msg)
 
     serialized_pkt = netprotocol.serialize(pkt)
@@ -82,6 +81,5 @@ def execute(port, src_guid, net_id):
     _g_logger.debug(f'Constructed broadcast message: {broadcast_msg}')
 
     # Send out broadcasts
-    with ThreadPoolExecutor(max_workers=num_broadcast_ips) as executor:
-        for ip in broadcast_ips:
-            executor.submit(__broadcast, broadcast_msg, src_guid, (ip, port))
+    for ip in broadcast_ips:
+        __broadcast(broadcast_msg, src_guid, (ip, port))
