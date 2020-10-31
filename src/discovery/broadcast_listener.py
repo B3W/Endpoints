@@ -20,7 +20,7 @@ def __cleanup(sockets):
 
     :param sockets: List of sockets to cleanup
     '''
-    for s in socket:
+    for s in sockets:
         s.close()
 
 

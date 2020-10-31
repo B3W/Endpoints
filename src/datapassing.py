@@ -129,7 +129,16 @@ def kill():
     '''Stops the data passing service's thread'''
     _g_logger.info("Data passing service received kill signal")
 
+    thread_join_timeout = 1.0  # Timeout (in sec.) for joining thread
+
     try:
+        # Send sentinal object to signal thread to exit
         _g_msg_queue.put_nowait(_g_SENTINAL)
+
+        _g_thread.join(timeout=thread_join_timeout)
+
+        if _g_thread.is_alive():
+            _g_logger.error('Unable to join data passing layer\'s thread')
+
     except queue.Full:
         _g_logger.error("Unable to kill data passing service")
