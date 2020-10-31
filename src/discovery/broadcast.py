@@ -4,9 +4,11 @@ available network interfaces.
 """
 from concurrent.futures import ThreadPoolExecutor
 import logging
-from message import msg, msgprotocol
-from network import netpacket, netprotocol
-from shared import netutils
+import msg
+import msgprotocol
+import netpacket
+import netprotocol
+import netutils
 import socket
 
 _g_logger = logging.getLogger(__name__)

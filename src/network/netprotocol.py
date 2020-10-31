@@ -2,10 +2,10 @@
 Module defining protocol for serializing and deserializing NetPackets for
 sending and receiving data between Endpoint applications.
 """
-from message import msgprotocol
-from network import netpacket as np
-from network import netid
-from shared import config as c
+import msgprotocol
+import netid
+import netpacket as np
+import config as c
 import struct
 import sys
 

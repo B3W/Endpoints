@@ -1,7 +1,7 @@
 '''"Frontend" for Endpoints application'''
 import logging
 import tkinter as tk
-from ui import appui
+import appui
 
 
 def start(host_guid, in_q, out_q):

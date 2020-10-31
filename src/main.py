@@ -1,23 +1,25 @@
-'''Entry point for Endpoints application'''
-from connection import connection_manager
+import connection_manager as cm
 import datapassing
-from discovery import broadcast, broadcast_listener
+import broadcast as bcast
+import broadcast_listener as bcastl
 import errno
 import gui
+import inspect
 import logging
-from network import netid
+import netid as nid
 import os
 import platform
 import queue
-from shared import config as c
-from shared import synceddict as sd
-from shared import timeutils
+import config as c
+import synceddict as sd
+import timeutils as timeutils
 import uuid
 
 
 def main():
+    '''Main method of Endpoints application'''
     # Get path to this module
-    main_path = os.path.dirname(os.path.abspath(__file__))
+    main_path = inspect.getfile(inspect.currentframe())
 
     # Initialize logging module
     log_name = 'Endpoint-Log-%s.log' % timeutils.get_iso_timestamp()
@@ -72,7 +74,7 @@ def main():
 
         c.Config.set(c.ConfigEnum.ENDPOINT_NAME, ep_name)
 
-    host_netid = netid.NetID(host_guid, ep_name)
+    host_netid = nid.NetID(host_guid, ep_name)
     logger.debug('NetID: %s', host_netid)
 
     # Retreive port numbers
@@ -102,25 +104,25 @@ def main():
     ui_queue = queue.Queue()  # Data -> UI
 
     # Start TCP connection manager
-    connection_manager.start(conn_port, host_guid, connection_map)
+    cm.start(conn_port, host_guid, connection_map)
     logger.info("Connection manager service started")
 
     # Start UDP listener for connection broadcasts
-    broadcast_listener.start(broadcast_port, host_guid, connection_bcast_queue)
+    bcastl.start(broadcast_port, host_guid, connection_bcast_queue)
     logger.info('Broadcast listener service started')
 
     # Start data passing layer for getting data to/from the UI
     datapassing.start(ui_queue)
 
     # Broadcast discovery message over network adapters
-    broadcast.execute(broadcast_port, host_guid, host_netid)
+    bcast.execute(broadcast_port, host_guid, host_netid)
     logger.info('Discovery message broadcasting complete')
 
     # Start up UI in main thread (blocks until UI is exited)
     gui.start(host_guid, backend_queue)
 
     # Shutdown
-    broadcast_listener.kill()
+    bcastl.kill()
 
     # Write configuration back to disk
     # c.Config.write()

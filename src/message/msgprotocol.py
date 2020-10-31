@@ -1,8 +1,8 @@
 """
 Module defining the protocol for serializing and deserializing messages.
 """
-from shared import config as c
-from message import msg
+import msg
+import config as c
 import struct
 
 

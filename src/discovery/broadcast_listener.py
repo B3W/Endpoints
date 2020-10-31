@@ -2,10 +2,11 @@
 Module providing server for responding to Enpoint broadcasts over LAN.
 Server runs on a separate thread from caller.
 """
-import connection_manager
+import connection_manager as cm
 import logging
-from message import msg, msgprotocol
-from network import netprotocol
+import msg
+import msgprotocol
+import netprotocol
 import select
 import socket
 import threading
@@ -155,9 +156,7 @@ def __mainloop(server, bcast_port, host_guid, request_queue):
                     net_id = message.payload
 
                     # Report device connection request
-                    connection_manager.attempt_connection(rx_addr,
-                                                          net_id.guid,
-                                                          net_id.name)
+                    cm.attempt_connection(rx_addr, net_id.guid, net_id.name)
 
                     __clear_buffer(data_buffer, rx_addr)
 

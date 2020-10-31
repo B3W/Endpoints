@@ -2,8 +2,8 @@
 '''
 import messageframe as mf
 import queue
-from shared import timeutils as tu
-from shared import datapassing_protocol as dp_proto
+import timeutils
+import datapassing_protocol as dproto
 import tkinter as tk
 from tkinter import ttk
 
@@ -121,19 +121,19 @@ class ConversationFrame(ttk.Frame):
 
         if self.active_conversation and msg:
             # Construct message to send
-            ts = tu.get_timestamp()
+            ts = timeutils.get_timestamp()
 
-            msg = dp_proto.DPTextMsg(dp_proto.DPMsgDst.DPMSG_DST_BACKEND,
-                                     self.host_id,
-                                     ts,
-                                     msg)
+            msg = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_BACKEND,
+                                   self.host_id,
+                                   ts,
+                                   msg)
 
             try:
                 # Push into sending queue
                 self.send_q.put_nowait(msg)
 
                 # Display
-                fmt_ts = tu.format_timestamp(ts)
+                fmt_ts = timeutils.format_timestamp(ts)
 
                 active_frame = self.conversations[self.active_conversation]
                 active_frame.add_text_message(self.host_id, fmt_ts, msg)

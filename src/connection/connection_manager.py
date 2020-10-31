@@ -3,13 +3,16 @@ Module providing server for managing Endpoint connections.
 Server runs on a separate thread from caller.
 """
 import datapassing
-from shared import datapassing_protocol as dp_proto
+import datapassing_protocol as dproto
 import logging
-from message import msg, msgprotocol
-from network import netpacket, netprotocol, netid
+import msg
+import msgprotocol
+import netid
+import netpacket
+import netprotocol
 import queue
 import select
-from shared import config as c
+import config as c
 import socket
 import threading
 
@@ -101,22 +104,22 @@ def attempt_connection(dst_addr, dst_guid, dst_name):
 
 def __notify_ui_of_connection(net_id):
     '''Passes connection information to UI'''
-    ui_message = dp_proto.DPConnectionMsg(net_id.guid, net_id.name)
+    ui_message = dproto.DPConnectionMsg(net_id.guid, net_id.name)
     datapassing.pass_msg(ui_message)
 
 
 def __notify_ui_of_text_data(guid, timestamp, data):
     '''Passes text data to UI'''
-    ui_message = dp_proto.DPTextMsg(dp_proto.DPMsgDst.DPMSG_DST_UI,
-                                    guid,
-                                    timestamp,
-                                    data)
+    ui_message = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_UI,
+                                  guid,
+                                  timestamp,
+                                  data)
     datapassing.pass_msg(ui_message)
 
 
 def __notify_ui_of_disconnect(net_id):
     '''Notifies UI that an Endpoint has disconnected'''
-    ui_message = dp_proto.DPDisconnectMsg(net_id.guid)
+    ui_message = dproto.DPDisconnectMsg(net_id.guid)
     datapassing.pass_msg(ui_message)
 
 

@@ -1,9 +1,8 @@
 '''
 Module providing service for passing data to and receiving data from the UI
 '''
-from connection import connection_manager as cm
 import logging
-from shared import datapassing_protocol as dp_proto
+import datapassing_protocol as dproto
 import queue
 import threading
 
@@ -15,7 +14,7 @@ def __process_connection_msg(message):
     '''Logic for processing a connection message'''
     mdst = message.destination
 
-    if mdst == dp_proto.DPMsgDst.DPMSG_DST_UI:
+    if mdst == dproto.DPMsgDst.DPMSG_DST_UI:
         # Pass connection message to UI
         try:
             _g_ui_queue.put_nowait(message)
@@ -30,7 +29,7 @@ def __process_disconnect_msg(message):
     '''Logic for processing a disconnect message'''
     mdst = message.destination
 
-    if mdst == dp_proto.DPMsgDst.DPMSG_DST_UI:
+    if mdst == dproto.DPMsgDst.DPMSG_DST_UI:
         # Pass connection message to UI
         try:
             _g_ui_queue.put_nowait(message)
@@ -43,16 +42,18 @@ def __process_disconnect_msg(message):
 
 def __process_text_msg(message):
     '''Logic for processing a text message'''
+    import connection.connection_manager as cm
+
     mdst = message.destination
 
-    if mdst == dp_proto.DPMsgDst.DPMSG_DST_UI:
+    if mdst == dproto.DPMsgDst.DPMSG_DST_UI:
         # Pass text message to UI
         try:
             _g_ui_queue.put_nowait(message)
         except queue.Full:
             _g_logger.error("Unable to pass text message to UI")
 
-    elif mdst == dp_proto.DPMsgDst.DPMSG_DST_BACKEND:
+    elif mdst == dproto.DPMsgDst.DPMSG_DST_BACKEND:
         # Pass text message to Backend
         cm.send_text_msg(message)
 
@@ -64,13 +65,13 @@ def __process_msg(message):
     '''Logic for processing a queue message'''
     mtype = message.msg_type
 
-    if mtype == dp_proto.DPMsgType.DPMSG_TYPE_CONNECTION:
+    if mtype == dproto.DPMsgType.DPMSG_TYPE_CONNECTION:
         __process_connection_msg(message)
 
-    if mtype == dp_proto.DPMsgType.DPMSG_TYPE_DISCONNECT:
+    if mtype == dproto.DPMsgType.DPMSG_TYPE_DISCONNECT:
         __process_disconnect_msg(message)
 
-    elif mtype == dp_proto.DPMsgType.DPMSG_TYPE_TEXT_MSG:
+    elif mtype == dproto.DPMsgType.DPMSG_TYPE_TEXT_MSG:
         __process_text_msg(message)
 
     else:

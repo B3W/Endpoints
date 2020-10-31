@@ -1,9 +1,9 @@
 '''
 Module defining message structure and message types.
 '''
-from shared import config as c
 import enum
-from network import netid
+import netid as netid
+import config as c
 
 
 @enum.unique
