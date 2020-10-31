@@ -122,7 +122,9 @@ def main():
     gui.start(host_guid, backend_queue)
 
     # Shutdown
+    cm.kill()
     bcastl.kill()
+    datapassing.kill()
 
     # Write configuration back to disk
-    # c.Config.write()
+    c.Config.write()

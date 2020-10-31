@@ -1,9 +1,10 @@
 '''
 Module defining message structure and message types.
 '''
+import config as c
 import enum
 import netid as netid
-import config as c
+import timeutils
 
 
 @enum.unique
@@ -30,15 +31,20 @@ class Msg(object):
     '''Structure representing message to be sent between Endpoints'''
     TIMESTAMP_SZ_BYTES = 19  # Length of ISO formatted time string
 
-    def __init__(self, msg_type, payload, timestamp="0000-00-00T00:00:00"):
+    def __init__(self, msg_type, payload, timestamp=None):
         """
         Initialization for message
 
         :param msg_type: Type of message denoted given by MsgType enum
         :param payload: Message data as 'bytes' object
+        :param timestamp: Optional timestamp, if None current timestamp used
         """
+        if timestamp is None:
+            self.timestamp = timeutils.get_iso_timestamp()
+        else:
+            self.timestamp = timestamp
+
         self.msg_type = msg_type
-        self.timestamp = timestamp
         self.payload = payload
 
     def __repr__(self):
