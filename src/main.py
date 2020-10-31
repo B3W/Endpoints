@@ -92,7 +92,7 @@ def main():
     try:
         conn_port = c.Config.get(c.ConfigEnum.CONNECTION_PORT)
     except KeyError:
-        conn_port = 3434
+        conn_port = 3435
         c.Config.set(c.ConfigEnum.CONNECTION_PORT, conn_port)
 
     logger.debug('Connection Port: %d', conn_port)
