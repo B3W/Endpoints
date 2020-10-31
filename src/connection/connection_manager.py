@@ -66,7 +66,7 @@ def attempt_connection(dst_addr, dst_guid, dst_name):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Attempt connection to destination
-    connection_addr = (dst_addr, _g_CONNECTION_PORT)
+    connection_addr = (dst_addr[0], _g_CONNECTION_PORT)
     sock.connect(connection_addr)
 
     # Record/Update active connection {GUID: (name, socket)}
