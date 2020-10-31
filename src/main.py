@@ -48,7 +48,7 @@ def main():
     config_path = os.path.join(root_path, 'config.json')
     c.Config.load(config_path)
 
-    # Construct host's GUID
+    # Construct host's byte encoding
     try:
         encoding = c.Config.get(c.ConfigEnum.BYTE_ENCODING).strip()
     except KeyError:
@@ -57,9 +57,14 @@ def main():
 
     logger.debug('Encoding: %s', encoding)
 
+    # Construct host's GUID
+    missing = False
     try:
         host_guid = c.Config.get(c.ConfigEnum.ENDPOINT_GUID)
     except KeyError:
+        missing = True
+
+    if missing or len(str(host_guid)) == 0:
         host_guid = uuid.uuid4().int  # Generate random GUID
         c.Config.set(c.ConfigEnum.ENDPOINT_GUID, host_guid)  # Write to config
 
