@@ -6,7 +6,7 @@ import datetime as dt
 ERROR_DATETIME = 'xx-xx-xxxx xx:xx'
 
 
-def convert_time_format(time):
+def convert_military_time(time):
     '''
     Converts 24-hour time to 12-hour
 
@@ -17,12 +17,17 @@ def convert_time_format(time):
 
 
 def get_iso_timestamp():
-    return dt.datetime.now().isoformat(timespec='minutes')
+    '''
+    Get the current time in ISO format (xxxx-xx-xxTxx:xx:xx)
+
+    :return: Current time in ISO format (precision = seconds)
+    '''
+    return dt.datetime.now().isoformat(timespec='seconds')
 
 
 def format_timestamp(iso_timestamp, military=True):
     '''
-    Formats ISO timestamp for displaying
+    Formats ISO timestamp into string for displaying
 
     :param timestamp: ISO timestamp as string
     :param military: True for 24-hour time, false for 12-hour time
@@ -38,7 +43,7 @@ def format_timestamp(iso_timestamp, military=True):
 
         # Format date and time
         if not military:
-            time = convert_time_format(time)
+            time = convert_military_time(time)
 
         formatted_timestamp = date + ' ' + time
 
