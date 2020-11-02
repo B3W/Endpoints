@@ -89,11 +89,11 @@ def __validate_broadcast(rx_data, host_guid):
             valid = False
             _g_logger.error(f'Received data is not a valid packet: {rx_data}')
 
-    # Sanity check sender's GUID
+    # Sanity check sender's GUID (We will receive our own broadcasts)
     if valid:
         if net_pkt.src == host_guid:
             valid = False
-            _g_logger.error(f'Broadcast received from self: {net_pkt}')
+            _g_logger.debug(f'Broadcast received from self: {net_pkt}')
 
     return net_pkt, valid
 

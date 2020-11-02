@@ -64,10 +64,18 @@ def attempt_connection(dst_addr, dst_guid, dst_name):
     # Create socket for connection
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.settimeout(2.0)  # TODO Constant
 
     # Attempt connection to destination
     connection_addr = (dst_addr[0], _g_CONNECTION_PORT)
-    sock.connect(connection_addr)
+    _g_logger.info(f'Attempting connection to \'{connection_addr}\'')
+
+    try:
+        sock.connect(connection_addr)
+    except TimeoutError:
+        _g_logger.error('Unable to create connection')
+        # TODO UI notification on failed connection?
+        return
 
     # Record/Update active connection {GUID: (name, socket)}
     if dst_guid not in _g_connection_map:
