@@ -252,6 +252,8 @@ def __mainloop(server):
         # Readable sockets have data ready to read
         for s in readable:
             if s is server:
+                _g_logger.info('Connection server accepting connection')
+
                 # Accept connections
                 conn_sock, addr = s.accept()
 
