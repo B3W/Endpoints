@@ -29,7 +29,6 @@ class MessageFrame(ttk.Frame):
 
         # Initialize frame holding Canvas
         ttk.Frame.__init__(self, master, *args, **kwargs)
-        self.config(style='tmp.TFrame')
 
         self.columnconfigure(0, weight=1)  # Canvas/Scrollable Frame
         self.columnconfigure(1, weight=0)  # AutoScrollbar

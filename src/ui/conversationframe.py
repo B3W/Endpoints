@@ -22,13 +22,6 @@ class ConversationFrame(ttk.Frame):
         :param master: The container holding this frame
         :param host_id: Unique id for the host running the application
         '''
-        # Configure Style
-        style = ttk.Style()
-        style.configure('tmp.TFrame', background='red')
-        style.configure('timestamp.TLabel',
-                        foreground='grey',
-                        font='Helvetica 8 italic')
-
         # Initialize frame
         ttk.Frame.__init__(self, master, *args, **kwargs)
 

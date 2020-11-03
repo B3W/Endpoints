@@ -19,6 +19,14 @@ class EndpointUI(ttk.Frame):
         ttk.Frame.__init__(self, master, *args, **kwargs)
         master.title('Endpoint Test UI')
 
+        # Configure Styles
+        style = ttk.Style()
+
+        # MessageFrame styles
+        style.configure('timestamp.TLabel',
+                        foreground='grey',
+                        font='Helvetica 8 italic')
+
         self.poll_id = None
 
         # Configure root window

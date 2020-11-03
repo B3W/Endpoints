@@ -9,7 +9,6 @@ class MessageWidget(ttk.Frame):
     '''
     def __init__(self, master, timestamp, *args, **kwargs):
         ttk.Frame.__init__(self, master, *args, **kwargs)
-        self.config(style='tmp.TFrame')
 
         # Initialize root grid
         self.columnconfigure(0, weight=1)
@@ -17,7 +16,7 @@ class MessageWidget(ttk.Frame):
         self.rowconfigure(1, weight=0)
 
         # Main message area
-        self.text = tk.Text(self, relief=tk.FLAT, height=2)
+        self.text = tk.Text(self, relief=tk.FLAT, wrap='word', height=2)
         self.img = None
 
         # Timestamp
