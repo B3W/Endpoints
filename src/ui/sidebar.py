@@ -6,6 +6,13 @@ import tkinter as tk
 from tkinter import ttk
 
 
+class Connection(object):
+    '''Class defining all data related to a connection'''
+    def __init__(self, guid, name):
+        self.ident = guid
+        self.name = name
+
+
 class SideBar(ttk.Frame):
     '''UI element representing the side panel'''
     def __init__(self, master,
@@ -25,8 +32,8 @@ class SideBar(ttk.Frame):
         self.activate_callback = activate_callback
         self.remove_callback = remove_callback
 
-        # Dictionary tracking connections with mapping -> {name: ident}
-        self.connections = {}
+        # List of active connections
+        self.connections = []
 
         # Root frame grid
         self.columnconfigure(0, weight=1)  # Listbox col
@@ -68,7 +75,7 @@ class SideBar(ttk.Frame):
         self.add_callback(ident)
 
         # Add connection to sidebar
-        self.connections[conn_name] = ident
+        self.connections.append(Connection(ident, conn_name))
         self.listbox.insert(tk.END, conn_name)
 
     def remove_connection(self, ident):
@@ -77,20 +84,19 @@ class SideBar(ttk.Frame):
 
         :param ident: ID of connection to remove
         '''
-        try:
-            # Get the name associated with the ID
-            keys = self.connections.keys()
-            conn_name = keys[list(self.connections.values).index(ident)]
+        # Get the name associated with the ID
+        index = self._find_connection_by_id(ident)
 
-        except ValueError:
+        if index == -1:
             # ID not found
             return
 
         try:
-            item_index = self.listbox.get(0, tk.END).index(conn_name)
+            connection = self.connections[index]
+            item_index = self.listbox.get(0, tk.END).index(connection.name)
 
             # Remove connection from sidebar
-            del self.connections[conn_name]
+            self.connections.remove(connection)
             self.listbox.delete(item_index)
 
             # Remove conversation from ConversationFrame
@@ -100,6 +106,26 @@ class SideBar(ttk.Frame):
             # Connection not found
             pass
 
+    def _find_connection_by_id(self, ident):
+        index = -1
+
+        for i in range(len(self.connections)):
+            if self.connections[i].ident == ident:
+                index = i
+                break
+
+        return index
+
+    def _find_connection_by_name(self, name):
+        index = -1
+
+        for i in range(len(self.connections)):
+            if self.connections[i].name == name:
+                index = i
+                break
+
+        return index
+
     # CALLBACKS
     def __on_connection_select(self, event):
         widget = event.widget
@@ -107,12 +133,15 @@ class SideBar(ttk.Frame):
         try:
             # Determine connection to activate
             index = int(widget.curselection()[0])
-            conn_name = widget.get(index)
-
-            # Notify ConversationFrame of activation
-            conn_ident = self.connections[conn_name]
-            self.activate_callback(conn_ident)
 
         except IndexError:
             # 'curselection' returned empty list
-            pass
+            return
+
+        conn_name = widget.get(index)
+
+        # Notify ConversationFrame of activation
+        index = self._find_connection_by_name(conn_name)
+
+        if index >= 0:
+            self.activate_callback(self.connections[index].ident)
