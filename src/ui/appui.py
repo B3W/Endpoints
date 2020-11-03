@@ -65,20 +65,20 @@ class EndpointUI(ttk.Frame):
             # Retrieve and decode data from queue
             qdata = data_q.get_nowait()
 
-            if qdata.type == dproto.DPMsgType.DPMSG_TYPE_TEXT_MSG:
+            if qdata.msg_type == dproto.DPMsgType.DPMSG_TYPE_TEXT_MSG:
                 # Report message to the ConversationFrame
                 self.convo_mgr.report_text_message(qdata.destination_id,
                                                    qdata.timestamp,
                                                    qdata.data)
                 data_q.task_done()  # Mark complete
 
-            elif qdata.type == dproto.DPMsgType.DPMSG_TYPE_CONNECTION:
+            elif qdata.msg_type == dproto.DPMsgType.DPMSG_TYPE_CONNECTION:
                 # Report connection to Sidebar and ConversationFrame
                 self.side_panel.report_connection(qdata.endpoint_id,
                                                   qdata.endpoint_name)
                 data_q.task_done()  # Mark complete
 
-            elif qdata.type == dproto.DPMsgType.DPMSG_TYPE_DISCONNECT:
+            elif qdata.msg_type == dproto.DPMsgType.DPMSG_TYPE_DISCONNECT:
                 # Report disconnection to Sidebar and ConversationFrame
                 self.side_panel.remove_connection(qdata.endpoint_id)
                 data_q.task_done()  # Mark complete
