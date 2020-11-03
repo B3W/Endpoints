@@ -104,7 +104,7 @@ def __mainloop():
 def pass_msg(message):
     '''Function for passing a message'''
     try:
-        _g_msg_queue.put_nowait()
+        _g_msg_queue.put_nowait(message)
     except queue.Full:
         _g_logger.error("Unable to queue message")
 
