@@ -117,26 +117,26 @@ class ConversationFrame(ttk.Frame):
 
     # CALLBACKS
     def __send_text_message(self, event=None):
-        msg = self.msg_entry.get().strip()
+        msg_data = self.msg_entry.get().strip()
 
-        if self.active_conversation_id and msg:
+        if self.active_conversation_id and msg_data:
             # Construct message to send
             ts = timeutils.get_iso_timestamp()
 
-            msg = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_BACKEND,
-                                   self.active_conversation_id,
-                                   ts,
-                                   msg)
+            dp_msg = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_BACKEND,
+                                      self.active_conversation_id,
+                                      ts,
+                                      msg_data)
 
             try:
                 # Pass message to the backend
-                datapassing.pass_msg(msg)
+                datapassing.pass_msg(dp_msg)
 
                 # Display
                 fmt_ts = timeutils.format_timestamp(ts)
 
                 active_frame = self.conversations[self.active_conversation_id]
-                active_frame.add_text_message(self.host_id, fmt_ts, msg)
+                active_frame.add_text_message(self.host_id, fmt_ts, msg_data)
 
                 self.msg_entry.delete(0, tk.END)  # Clear entry on send
 
