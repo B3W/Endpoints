@@ -72,7 +72,7 @@ def attempt_connection(dst_addr, dst_guid, dst_name):
 
     try:
         sock.connect(connection_addr)
-    except TimeoutError:
+    except socket.timeout:
         _g_logger.error('Unable to create connection')
         # TODO UI notification on failed connection?
         return
@@ -362,7 +362,8 @@ def start(conn_port, host_guid, connection_map):
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
     server.setblocking(False)
 
-    server.bind(server_addr)
+    server.bind(server_addr)  # Bind server socket to address
+    server.listen(5)  # Begin listening for connections
     _g_logger.info('TCP connection server socket created and configured')
 
     # Save reference to the connection map

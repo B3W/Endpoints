@@ -225,7 +225,8 @@ def start(bcast_port, host_guid, request_queue):
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
     server.setblocking(False)
 
-    server.bind(server_addr)
+    server.bind(server_addr)  # Bind server socket to address
+    # Note: No 'socket.listen' call because UDP is connectionless
     _g_logger.info('UDP broadcast server socket created and configured')
 
     # Startup server's mainloop and return control to caller
