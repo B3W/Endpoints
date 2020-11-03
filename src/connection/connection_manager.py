@@ -103,8 +103,12 @@ def attempt_connection(dst_addr, dst_guid, dst_name):
     try:
         connection.outmsg_queue.put_nowait(serialized_pkt)
 
+        # Add new socket to outputs
         if connection.tcp_socket not in _g_outputs:
             _g_outputs.append(connection.tcp_socket)
+
+        # Interrupt on success so socket is added to select call
+        _g_interrupt_sock.send(b'1')
 
     except queue.Full:
         _g_logger.error("Unable to send text message")
@@ -222,6 +226,10 @@ def __process_rx_data(addr, data, sock):
 
             # Close the connection
             _g_inputs.remove(sock)
+
+            if sock in _g_outputs:
+                _g_outputs.remove(sock)
+
             sock.close()
             del _g_connection_map[net_id.guid]
 
@@ -230,9 +238,25 @@ def __process_rx_data(addr, data, sock):
                             % msg_type)
 
     else:
-        # Something went wrong
+        # Socket disconnected
         _g_inputs.remove(sock)
+
+        if sock in _g_outputs:
+            _g_outputs.remove(sock)
+
         sock.close()
+
+        # Remove connection
+        connection_found = False
+
+        for guid, conn in _g_connection_map.items():
+            if conn.tcp_socket is sock:
+                net_id = netid.NetID(guid, conn.friendly_name)
+                connection_found = True
+
+        if connection_found:
+            __notify_ui_of_disconnect(net_id)
+            del _g_connection_map[net_id.guid]
 
 
 def __mainloop(server):
@@ -248,7 +272,7 @@ def __mainloop(server):
 
     RECV_BUF_SZ = 1024  # Max size of received data in bytes
     done = False        # Flag indicating server mainloop should stop
-    _g_inputs = [server, _g_recv_kill_sock]    # Sockets to read
+    _g_inputs = [server, _g_interrupt_sock_recv]    # Sockets to read
     _g_outputs = []
 
     while _g_inputs and not done:
@@ -269,10 +293,12 @@ def __mainloop(server):
                 conn_sock.setblocking(False)
                 _g_inputs.append(conn_sock)
 
-            elif s is _g_recv_kill_sock:
-                _g_logger.info('Connection server received kill signal')
+            elif s is _g_interrupt_sock_recv:
                 s.recv(RECV_BUF_SZ)  # Clear out dummy data
-                done = True  # End server after this iteration of mainloop
+
+                if _g_kill_flag:
+                    _g_logger.info('Connection server received kill signal')
+                    done = True  # End server after this iteration of mainloop
 
             else:
                 # Established socket sent data
@@ -286,7 +312,7 @@ def __mainloop(server):
         for s in writable:
             msg_queue = None
 
-            for guid, connection in _g_connection_map.items():
+            for connection in _g_connection_map.values():
                 # Check if a connection is associated with this socket
                 if connection.tcp_socket is s:
                     # Get the message queue for that connection
@@ -334,29 +360,34 @@ def start(conn_port, host_guid, connection_map):
     :param connection_map: Dictionary for tracking active connections
     '''
     global _g_HOST_GUID
-    global _g_kill_sock
-    global _g_recv_kill_sock
+    global _g_CONNECTION_PORT
+    global _g_kill_flag
+    global _g_interrupt_sock
+    global _g_interrupt_sock_recv
     global _g_mainloop_thread
     global _g_connection_map
-    global _g_CONNECTION_PORT
 
+    _g_HOST_GUID = host_guid
     _g_CONNECTION_PORT = conn_port
     opt_val = 1  # For setting socket options
 
-    _g_HOST_GUID = host_guid
-
     # Create/Configure TCP socket pair for returning control from 'select'
-    _g_kill_sock, _g_recv_kill_sock = socket.socketpair(family=socket.AF_INET)
+    _g_kill_flag = False
 
-    _g_kill_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, opt_val)
-    _g_recv_kill_sock.setsockopt(socket.SOL_SOCKET,
+    _g_interrupt_sock, _g_interrupt_sock_recv \
+        = socket.socketpair(family=socket.AF_INET)
+
+    _g_interrupt_sock.setsockopt(socket.SOL_SOCKET,
                                  socket.SO_REUSEADDR,
                                  opt_val)
-    _g_recv_kill_sock.setblocking(False)
+    _g_interrupt_sock_recv.setsockopt(socket.SOL_SOCKET,
+                                      socket.SO_REUSEADDR,
+                                      opt_val)
+    _g_interrupt_sock_recv.setblocking(False)
 
-    _g_logger.info('Dummy TCP socket pair created and configured')
+    _g_logger.info('Interrupt TCP socket pair created and configured')
 
-    # Create and configure TCP server socket to receive TCP connection requests
+    # Create/Configure TCP server socket to receive TCP connection requests
     server_addr = ('', _g_CONNECTION_PORT)  # Listen on all interfaces
 
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
@@ -380,6 +411,8 @@ def kill():
     Gracefully stops the connection server and attempts to
     release thread resources.
     '''
+    global _g_kill_flag
+
     # Server is only killable if it has been started
     try:
         # 'start' called at least once but thread is inactive
@@ -401,8 +434,9 @@ def kill():
 
     # Signal mainloop to exit
     _g_logger.info('Sending kill signal to connection server')
-    _g_kill_sock.send(b'1')
-    _g_kill_sock.close()
+    _g_kill_flag = True
+    _g_interrupt_sock.send(b'1')
+    _g_interrupt_sock.close()
 
     # Attempt to join mainloop thread
     _g_mainloop_thread.join(timeout=thread_join_timeout)
