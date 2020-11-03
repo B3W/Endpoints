@@ -55,6 +55,9 @@ def send_text_msg(text_message):
         if connection.tcp_socket not in _g_outputs:
             _g_outputs.append(connection.tcp_socket)
 
+        # Interrupt on success so socket is added to select call
+        _g_interrupt_sock.send(b'1')
+
     except queue.Full:
         _g_logger.error("Unable to send text message")
 

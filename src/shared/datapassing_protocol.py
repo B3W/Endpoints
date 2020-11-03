@@ -36,6 +36,7 @@ class DPTextMsg(DPMsg):
         '''
         :param mdst: Layer that message should be passed to
         :param dst_id: Endpoint's unique ID to send this message to
+        :param timestamp: ISO timestamp for this message
         '''
         super().__init__(DPMsgType.DPMSG_TYPE_TEXT_MSG, mdst)
         self.destination_id = dst_id

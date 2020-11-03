@@ -121,7 +121,7 @@ class ConversationFrame(ttk.Frame):
 
         if self.active_conversation and msg:
             # Construct message to send
-            ts = timeutils.get_timestamp()
+            ts = timeutils.get_iso_timestamp()
 
             msg = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_BACKEND,
                                    self.host_id,
