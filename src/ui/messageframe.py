@@ -3,6 +3,7 @@
 import autoscrollbar as asb
 import math
 import messagewidget as mw
+import timeutils
 import tkinter as tk
 from tkinter import ttk
 
@@ -64,11 +65,19 @@ class MessageFrame(ttk.Frame):
         self.msg_frame.bind('<Leave>', self.__unbind_mousewheel)
 
     def add_text_message(self, ident, timestamp, text):
+        '''
+        Function for displaying text message
+
+        :param ident: GUID of the message sender
+        :param timestamp: ISO formatted timestamp
+        :param text: Message data
+        '''
         if not text:
             # Ignore empty messages
             return
 
-        text_msg = mw.MessageWidget(self.msg_frame, timestamp)
+        fmt_ts = timeutils.format_timestamp(timestamp)
+        text_msg = mw.MessageWidget(self.msg_frame, fmt_ts)
         text_msg.set_text(text)
 
         if ident == MessageFrame.host_id:

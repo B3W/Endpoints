@@ -104,6 +104,11 @@ class ConversationFrame(ttk.Frame):
 
     def report_text_message(self, ident, timestamp, text):
         '''
+        Function for passing received message up through UI
+
+        :param ident: GUID of the message sender
+        :param timestamp: ISO formatted timestamp
+        :param text: Message data
         '''
         self.conversations[ident].add_text_message(ident, timestamp, text)
 
@@ -117,6 +122,7 @@ class ConversationFrame(ttk.Frame):
 
     # CALLBACKS
     def __send_text_message(self, event=None):
+        '''Callback that sends a message in the active conversation'''
         msg_data = self.msg_entry.get().strip()
 
         if self.active_conversation_id and msg_data:
@@ -133,10 +139,8 @@ class ConversationFrame(ttk.Frame):
                 datapassing.pass_msg(dp_msg)
 
                 # Display
-                fmt_ts = timeutils.format_timestamp(ts)
-
                 active_frame = self.conversations[self.active_conversation_id]
-                active_frame.add_text_message(self.host_id, fmt_ts, msg_data)
+                active_frame.add_text_message(self.host_id, ts, msg_data)
 
                 self.msg_entry.delete(0, tk.END)  # Clear entry on send
 
