@@ -320,6 +320,7 @@ def __mainloop(server):
 
     # Cleanup sockets on exit
     __cleanup(_g_inputs)
+    __cleanup(_g_outputs)
     _g_logger.info('Connection server closed')
 
 
