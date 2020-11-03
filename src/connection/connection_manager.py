@@ -400,10 +400,9 @@ def kill():
     thread_join_timeout = 1.0  # Timeout (in sec.) for joining thread
 
     # Signal mainloop to exit
+    _g_logger.info('Sending kill signal to connection server')
     _g_kill_sock.send(b'1')
     _g_kill_sock.close()
-
-    _g_logger.info('Kill signal sent to connection server')
 
     # Attempt to join mainloop thread
     _g_mainloop_thread.join(timeout=thread_join_timeout)
