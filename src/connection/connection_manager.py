@@ -215,7 +215,6 @@ def __process_rx_data(addr, data, sock):
             text_data = message.payload
 
             __notify_ui_of_text_data(net_pkt.src, message.timestamp, text_data)
-            pass
 
         elif msg_type == msg.MsgType.ENDPOINT_DISCONNECTION:
             # A connection is getting disconnected
@@ -256,6 +255,7 @@ def __process_rx_data(addr, data, sock):
             if conn.tcp_socket is sock:
                 net_id = netid.NetID(guid, conn.friendly_name)
                 connection_found = True
+                break
 
         if connection_found:
             __notify_ui_of_disconnect(net_id)
