@@ -46,7 +46,7 @@ def __process_disconnect_msg(message):
 
 def __process_text_msg(message):
     '''Logic for processing a text message'''
-    import connection.connection_manager as cm
+    import connection_manager as cm
 
     mdst = message.destination
 

@@ -33,7 +33,7 @@ class ConversationFrame(ttk.Frame):
         ttk.Frame.__init__(self, master, *args, **kwargs)
 
         self.host_id = host_id
-        self.active_conversation = b''
+        self.active_conversation_id = b''
 
         # Configure frame's grid
         self.columnconfigure(0, weight=1)
@@ -79,24 +79,24 @@ class ConversationFrame(ttk.Frame):
         '''
         :param ident: ID of conversation to activate
         '''
-        if ident == self.active_conversation:
+        if ident == self.active_conversation_id:
             return
 
-        if self.active_conversation:
-            self.conversations[self.active_conversation].grid_forget()
+        if self.active_conversation_id:
+            self.conversations[self.active_conversation_id].grid_forget()
 
         # Place the newly active conversation into the UI
         ConversationFrame.__place_message_frame(self.conversations[ident])
-        self.active_conversation = ident
+        self.active_conversation_id = ident
 
     def remove_conversation(self, ident):
         '''
         :param ident: ID of conversations to delete
         '''
         # Remove MessageFrame from UI if it is active
-        if ident == self.active_conversation:
+        if ident == self.active_conversation_id:
             self.conversations[ident].grid_forget()
-            self.active_conversation = b''
+            self.active_conversation_id = b''
 
         # Delete the MessageFrame
         self.conversations[ident].destroy()
@@ -119,12 +119,12 @@ class ConversationFrame(ttk.Frame):
     def __send_text_message(self, event=None):
         msg = self.msg_entry.get().strip()
 
-        if self.active_conversation and msg:
+        if self.active_conversation_id and msg:
             # Construct message to send
             ts = timeutils.get_iso_timestamp()
 
             msg = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_BACKEND,
-                                   self.host_id,
+                                   self.active_conversation_id,
                                    ts,
                                    msg)
 
@@ -135,7 +135,7 @@ class ConversationFrame(ttk.Frame):
                 # Display
                 fmt_ts = timeutils.format_timestamp(ts)
 
-                active_frame = self.conversations[self.active_conversation]
+                active_frame = self.conversations[self.active_conversation_id]
                 active_frame.add_text_message(self.host_id, fmt_ts, msg)
 
                 self.msg_entry.delete(0, tk.END)  # Clear entry on send
