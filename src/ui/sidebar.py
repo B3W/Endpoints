@@ -72,7 +72,7 @@ class SideBar(ttk.Frame):
         :param conn: Friendly name to append
         '''
         # Initialize conversation for ConversationFrame
-        self.add_callback(ident)
+        self.add_callback(ident, conn_name)
 
         # Add connection to sidebar
         self.connections.append(Connection(ident, conn_name))

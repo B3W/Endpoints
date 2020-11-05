@@ -1,31 +1,39 @@
 '''
 '''
 import autoscrollbar as asb
+import config as c
 import math
 import messagewidget as mw
 import timeutils
 import tkinter as tk
 from tkinter import ttk
+import logging
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class MessageFrame(ttk.Frame):
     '''UI element displaying the messages of conversation'''
-    _SENT_X_PAD = (40, 10)  # 'X' pad for sent msg (l-pad, r-pad)
-    _SENT_STICKY = tk.E  # Side for sent messages to appear in msg frame
-    _RECV_X_PAD = (10, 40)  # 'X' pad for recv msg (l-pad, r-pad)
-    _RECV_STICKY = tk.W  # Side for received messages to appear in msg frame
+    _SENT_X_PAD = (10, 10)  # 'X' pad for sent msg (l-pad, r-pad)
+    _SENT_STICKY = tk.EW  # Side for sent messages to appear in msg frame
+    _RECV_X_PAD = (10, 10)  # 'X' pad for recv msg (l-pad, r-pad)
+    _RECV_STICKY = tk.EW  # Side for received messages to appear in msg frame
     _MSG_Y_PAD = (20, 0)  # 'Y' pad for all msg (t-pad, b-pad)
 
     _MOUSEWHEEL_EVENT = '<MouseWheel>'  # Event to bind for mouse wheel scrolls
     host_id = b''  # Universal host ID of the running Endpoint
 
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, master, name, *args, **kwargs):
         '''
         Initializes the MessageFrame
 
         :param master: The container holding this frame
+        :param name: Friendly name of Endpoint communicating with
         '''
+        self.correspondent_name = name
         self.num_msgs = 0  # Number of messages displayed
+        self.msgs = []  # List of all messages in the frame
 
         # Initialize frame holding Canvas
         ttk.Frame.__init__(self, master, *args, **kwargs)
@@ -79,8 +87,11 @@ class MessageFrame(ttk.Frame):
         text_msg = mw.MessageWidget(self.msg_frame, fmt_ts)
         text_msg.set_text(text)
 
-        if ident == MessageFrame.host_id:
+        if ident == c.Config.get(c.ConfigEnum.ENDPOINT_GUID):
             # The host sent this message
+            text_msg.set_author('Me', ident)
+            text_msg.place_message(MessageFrame._SENT_STICKY)
+
             text_msg.grid(column=0, row=self.num_msgs,
                           sticky=MessageFrame._SENT_STICKY,
                           padx=MessageFrame._SENT_X_PAD,
@@ -88,11 +99,15 @@ class MessageFrame(ttk.Frame):
 
         else:
             # Someone other than the host sent the message
+            text_msg.set_author(self.correspondent_name, ident)
+            text_msg.place_message(MessageFrame._RECV_STICKY)
+
             text_msg.grid(column=0, row=self.num_msgs,
                           sticky=MessageFrame._RECV_STICKY,
                           padx=MessageFrame._RECV_X_PAD,
                           pady=MessageFrame._MSG_Y_PAD)
 
+        self.msgs.insert(0, text_msg)
         self.num_msgs += 1
         self.__scroll_last_message()
 
@@ -102,8 +117,8 @@ class MessageFrame(ttk.Frame):
 
     # CALLBACKS
     def __on_canvas_configure(self, event):
-        new_canvas_width = event.width
-        self.canvas.itemconfigure(self.canvas_frame_id, width=new_canvas_width)
+        canvas_width = event.width
+        self.canvas.itemconfigure(self.canvas_frame_id, width=canvas_width)
 
     def __update_scrollregion(self, event=None):
         self.canvas.configure(scrollregion=self.canvas.bbox(tk.ALL))

@@ -1,4 +1,5 @@
 import conversationframe as cf
+from fonts import Fonts
 import menubar as mb
 import datapassing_protocol as dproto
 import sidebar as sb
@@ -17,15 +18,22 @@ class EndpointUI(ttk.Frame):
         '''
         # Initialize root window
         ttk.Frame.__init__(self, master, *args, **kwargs)
-        master.title('Endpoint Test UI')
+        master.title(f'Endpoints')
+
+        # Configure fonts
+        Fonts.init()
 
         # Configure Styles
         style = ttk.Style()
 
         # MessageFrame styles
-        style.configure('timestamp.TLabel',
+        style.configure('MsgAuthor.TLabel',
+                        foreground='dark grey',
+                        font=Fonts.get('MessageAuthor'))
+
+        style.configure('MsgTimestamp.TLabel',
                         foreground='grey',
-                        font='Helvetica 8 italic')
+                        font=Fonts.get('MessageTimestamp'))
 
         self.poll_id = None
 
@@ -36,7 +44,7 @@ class EndpointUI(ttk.Frame):
         # Initialize root window grid
         master.columnconfigure(0, weight=1)
         master.rowconfigure(0, weight=1)
-        master.minsize(width=400, height=200)
+        master.minsize(width=700, height=400)
 
         # Root frame grid
         self.columnconfigure(0, weight=1)

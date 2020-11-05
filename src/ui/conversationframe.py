@@ -62,11 +62,11 @@ class ConversationFrame(ttk.Frame):
                            padx=ConversationFrame._SEND_BTN_X_PAD,
                            sticky=(tk.W,))
 
-    def add_conversation(self, ident):
+    def add_conversation(self, ident, name):
         '''
         :param ident: ID to associate with new conversation
         '''
-        self.conversations[ident] = mf.MessageFrame(self)
+        self.conversations[ident] = mf.MessageFrame(self, name)
 
     def activate_conversation(self, ident):
         '''
@@ -79,7 +79,11 @@ class ConversationFrame(ttk.Frame):
             self.conversations[self.active_conversation_id].grid_forget()
 
         # Place the newly active conversation into the UI
-        ConversationFrame.__place_message_frame(self.conversations[ident])
+        self.conversations[ident].grid(column=0, row=0, columnspan=2,
+                                       padx=ConversationFrame._MSG_FRAME_X_PAD,
+                                       pady=ConversationFrame._MSG_FRAME_Y_PAD,
+                                       sticky=(tk.N, tk.S, tk.E, tk.W))
+
         self.active_conversation_id = ident
 
     def remove_conversation(self, ident):
@@ -104,14 +108,6 @@ class ConversationFrame(ttk.Frame):
         :param text: Message data
         '''
         self.conversations[ident].add_text_message(ident, timestamp, text)
-
-    def __place_message_frame(frame):
-        '''
-        '''
-        frame.grid(column=0, row=0, columnspan=2,
-                   padx=ConversationFrame._MSG_FRAME_X_PAD,
-                   pady=ConversationFrame._MSG_FRAME_Y_PAD,
-                   sticky=(tk.N, tk.S, tk.E, tk.W))
 
     # CALLBACKS
     def __send_text_message(self, event=None):
