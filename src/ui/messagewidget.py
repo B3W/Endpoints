@@ -94,6 +94,11 @@ class MessageWidget(ttk.Frame):
 
     def set_author(self, author_name, author_guid):
         self.author_guid = author_guid
+
+        name_len = len(author_name)
+        if name_len > 25:
+            author_name = author_name[:name_len - 3] + '...'
+
         self.author_lbl.configure(text=author_name)
 
     def place_message(self, sticky):
