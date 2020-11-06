@@ -44,7 +44,7 @@ class MessageFrame(ttk.Frame):
 
         # Initialize Canvas to hold 'scrollable' frame
         self.canvas = tk.Canvas(self, highlightthickness=0)
-        self.canvas.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+        self.canvas.grid(column=0, row=0, sticky=tk.NSEW)
 
         # Initialize vertical AutoScrollbar and link to the Canvas
         self.vsb = asb.AutoScrollbar(self,
@@ -83,6 +83,7 @@ class MessageFrame(ttk.Frame):
             # Ignore empty messages
             return
 
+        # Create and configure message
         fmt_ts = timeutils.format_timestamp(timestamp)
         text_msg = mw.MessageWidget(self.msg_frame, fmt_ts)
         text_msg.set_text(text)
@@ -133,6 +134,10 @@ class MessageFrame(ttk.Frame):
         self.canvas.unbind_all(MessageFrame._MOUSEWHEEL_EVENT)
 
     def __on_mousewheel(self, event):
+        # Do not allow scrolling if scrollbars are hidden
+        if self.vsb.hidden:
+            return
+
         # Get sign of delta then reverse to get scroll direction
         scroll_dir = -1 * int(math.copysign(1, event.delta))
         self.canvas.yview_scroll(scroll_dir, 'units')

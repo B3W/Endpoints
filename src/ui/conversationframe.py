@@ -42,6 +42,11 @@ class ConversationFrame(ttk.Frame):
         #       relevant to the messages/conversation is tracked elsewhere
         self.conversations = {}
 
+        hint_text = 'Select connection to view/send messages'
+        self.no_conversation_label = ttk.Label(self,
+                                               text=hint_text,
+                                               style='EmptyArea.TLabel')
+
         # Entry area for entering a new message
         # TODO Change to Text widget for multiline/non-text
         self.msg_entry = ttk.Entry(self)
@@ -62,6 +67,10 @@ class ConversationFrame(ttk.Frame):
                            padx=ConversationFrame._SEND_BTN_X_PAD,
                            sticky=(tk.W,))
 
+        # Implement load previous conversations?
+        if len(self.conversations) == 0:
+            self.__show_no_conversations_hint()
+
     def add_conversation(self, ident, name):
         '''
         :param ident: ID to associate with new conversation
@@ -74,6 +83,8 @@ class ConversationFrame(ttk.Frame):
         '''
         if ident == self.active_conversation_id:
             return
+
+        self.__hide_no_conversations_hint()
 
         if self.active_conversation_id:
             self.conversations[self.active_conversation_id].grid_forget()
@@ -96,8 +107,15 @@ class ConversationFrame(ttk.Frame):
             self.active_conversation_id = b''
 
         # Delete the MessageFrame
-        self.conversations[ident].destroy()
-        del self.conversations[ident]
+        try:
+            self.conversations[ident].destroy()
+            del self.conversations[ident]
+        except IndexError:
+            # Attempted to delete conversation that does not exist
+            pass
+
+        if len(self.conversations) == 0:
+            self.__show_no_conversations_hint()
 
     def report_text_message(self, ident, timestamp, text):
         '''
@@ -108,6 +126,12 @@ class ConversationFrame(ttk.Frame):
         :param text: Message data
         '''
         self.conversations[ident].add_text_message(ident, timestamp, text)
+
+    def __show_no_conversations_hint(self):
+        self.no_conversation_label.grid(column=0, row=0)
+
+    def __hide_no_conversations_hint(self):
+        self.no_conversation_label.grid_forget()
 
     # CALLBACKS
     def __send_text_message(self, event=None):

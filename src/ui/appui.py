@@ -35,6 +35,11 @@ class EndpointUI(ttk.Frame):
                         foreground='grey',
                         font=Fonts.get('MessageTimestamp'))
 
+        style.configure('EmptyArea.TLabel',
+                        foreground='grey',
+                        anchor=tk.CENTER,
+                        font=Fonts.get('EmptyArea'))
+
         self.poll_id = None
 
         # Configure root window

@@ -16,6 +16,8 @@ class Fonts(object):
                                                    slant='italic')
         Fonts._font_map['MessageText'] = Font(family="Courier", size=12)
 
+        Fonts._font_map['EmptyArea'] = Font(family="Courier", size=12)
+
     @staticmethod
     def get(font_name):
         ''' Retrieves font with given identifier '''

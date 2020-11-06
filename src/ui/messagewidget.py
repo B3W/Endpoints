@@ -7,17 +7,22 @@ import math
 
 
 class ResizableText(tk.Text):
-    def __init__(self, master, *args, **kwargs):
-        tk.Text.__init__(self, master, *args, **kwargs)
+    def __init__(self, master, fixed_font, *args, **kwargs):
+        tk.Text.__init__(self, master, font=fixed_font, *args, **kwargs)
+        self.font = fixed_font
         self.line_count = 0
+        self._resizing = False
+
+        # Pixel width to font width conversion number
+        self._pixel_unit = self.font.measure('0')
 
         self.bind('<<Modified>>', self.resize)
 
     def resize(self, event=None):
         widget_width = 0
         resized_line_count = 0
-        lines = self.get('1.0', 'end-1c').splitlines()
         max_width = self.cget('width')
+        lines = self.get('1.0', 'end-1c').splitlines()
 
         for line in lines:
             line_width = len(line)
@@ -34,9 +39,12 @@ class ResizableText(tk.Text):
 
         resized_line_count = math.ceil(resized_line_count)
 
+        # Only configure height if it has changed
         if self.line_count != resized_line_count:
             self.line_count = resized_line_count
             self.configure(height=self.line_count)
+
+        self._resizing = False
 
     def on_configure(self, event):
         # NOTE 'event.width' is the pixel width of the text
@@ -45,10 +53,13 @@ class ResizableText(tk.Text):
 
         # Bit of a hack. Text widgets determine their width based on the pixel
         # size of a '0'. Convert the given pixel width to a font width.
-        pixel_unit = Fonts.get('MessageText').measure('0')
-        converted_width = int(event.width / pixel_unit)
+        converted_width = int(event.width / self._pixel_unit)
         self.configure(width=converted_width)
-        self.resize()
+
+        # Do not resize on every configure to save CPU load
+        if not self._resizing:
+            self._resizing = True
+            self.after(200, self.resize)
 
 
 class MessageWidget(ttk.Frame):
@@ -64,12 +75,15 @@ class MessageWidget(ttk.Frame):
         self.rowconfigure(1, weight=0)
 
         # Main message area
+        # NOTE  Default height to 1 so that it does not attempt to fill up
+        #       available space cause screen flicker and grid calculation lag
         self.text = ResizableText(self,
+                                  Fonts.get('MessageText'),
                                   relief=tk.FLAT,
-                                  font=Fonts.get('MessageText'),
                                   wrap='word',
                                   highlightbackground="light grey",
-                                  highlightthickness=2)
+                                  highlightthickness=2,
+                                  height=1)
 
         # Frame containing author, timestamp, etc...
         self.metadata_frame = ttk.Frame(self)

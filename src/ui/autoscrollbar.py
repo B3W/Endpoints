@@ -24,7 +24,7 @@ class AutoScrollbar(ttk.Scrollbar):
         self.column = column
         self.row = row
         self.span = span
-        self._hidden = False  # Flag tracking if scrollbar is visible
+        self.hidden = False  # Flag tracking if scrollbar is visible
 
         # Initially set the scrollbar visible
         # Will get reversed in initial call to 'set' function if necessary
@@ -36,11 +36,11 @@ class AutoScrollbar(ttk.Scrollbar):
         '''
         if float(lo) <= 0.0 and float(hi) >= 1.0:
             # Only need to hide if the AutoScrollbar is currently visible
-            if not self._hidden:
+            if not self.hidden:
                 self.__hide()
         else:
             # Only need to show if the AutoScrollbar is currently not visible
-            if self._hidden:
+            if self.hidden:
                 self.__show()
 
         ttk.Scrollbar.set(self, lo, hi)
@@ -62,14 +62,14 @@ class AutoScrollbar(ttk.Scrollbar):
             self.grid(column=self.column, row=self.row,
                       columnspan=self.span, sticky=sticky)
 
-        self._hidden = False
+        self.hidden = False
 
     def __hide(self):
         '''
         Helper function for hiding AutoScrollbar
         '''
         self.grid_forget()
-        self._hidden = True
+        self.hidden = True
 
     def pack(self, **kw):
         raise(tk.TclError, "cannot use pack with this widget")
