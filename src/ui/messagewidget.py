@@ -51,14 +51,15 @@ class ResizableText(tk.Text):
         if event.width <= 1:  # Ignore calls with no width
             return
 
-        # Bit of a hack. Text widgets determine their width based on the pixel
-        # size of a '0'. Convert the given pixel width to a font width.
-        converted_width = int(event.width / self._pixel_unit)
-        self.configure(width=converted_width)
-
-        # Do not resize on every configure to save CPU load
+        # Only resize every ~200ms
         if not self._resizing:
             self._resizing = True
+
+            # Bit of a hack. Text widgets determine their width based on the
+            # pixel size of a '0'. Convert the given pixel width to font width
+            converted_width = int(event.width / self._pixel_unit)
+            self.configure(width=converted_width)
+
             self.after(200, self.resize)
 
 
@@ -68,11 +69,6 @@ class MessageWidget(ttk.Frame):
     def __init__(self, master, timestamp_lbl, *args, **kwargs):
         ttk.Frame.__init__(self, master, *args, **kwargs)
         self.author_guid = b''
-
-        # Initialize root grid
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=0)
-        self.rowconfigure(1, weight=0)
 
         # Main message area
         # NOTE  Default height to 1 so that it does not attempt to fill up
@@ -85,17 +81,13 @@ class MessageWidget(ttk.Frame):
                                   highlightthickness=2,
                                   height=1)
 
-        # Frame containing author, timestamp, etc...
-        self.metadata_frame = ttk.Frame(self)
-        self.metadata_frame.grid(column=0, row=0, sticky=tk.EW)
-
         # Author ID
-        self.author_lbl = ttk.Label(self.metadata_frame,
+        self.author_lbl = ttk.Label(self,
                                     text='',
                                     style='MsgAuthor.TLabel')
 
         # Timestamp
-        self.timestamp_lbl = ttk.Label(self.metadata_frame,
+        self.timestamp_lbl = ttk.Label(self,
                                        text=timestamp_lbl,
                                        style='MsgTimestamp.TLabel')
 
@@ -118,11 +110,11 @@ class MessageWidget(ttk.Frame):
     def place_message(self, sticky):
         # Places message widget on specific side
         if tk.W in sticky:
-            self.author_lbl.pack(side=tk.LEFT)
-            self.timestamp_lbl.pack(side=tk.LEFT)
+            self.author_lbl.pack(side=tk.TOP, anchor=tk.NW)
+            self.timestamp_lbl.pack(side=tk.TOP, anchor=tk.NW)
+            self.text.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         else:
-            self.timestamp_lbl.pack(side=tk.RIGHT)
-            self.author_lbl.pack(side=tk.RIGHT)
-
-        self.text.grid(column=0, row=1, sticky=sticky)
+            self.timestamp_lbl.pack(side=tk.TOP, anchor=tk.NE)
+            self.author_lbl.pack(side=tk.TOP, anchor=tk.NE)
+            self.text.pack(side=tk.RIGHT, fill=tk.X, expand=True)
