@@ -31,16 +31,17 @@ class MessageFrame(ttk.Frame):
         :param master: The container holding this frame
         :param name: Friendly name of Endpoint communicating with
         '''
-        self.correspondent_name = name
-        self.num_msgs = 0  # Number of messages displayed
-        self.msgs = []  # List of all messages in the frame
-
         # Initialize frame holding Canvas
         ttk.Frame.__init__(self, master, *args, **kwargs)
 
         self.columnconfigure(0, weight=1)  # Canvas/Scrollable Frame
         self.columnconfigure(1, weight=0)  # AutoScrollbar
         self.rowconfigure(0, weight=1)
+
+        self.correspondent_name = name
+        self.num_msgs = 0  # Number of messages displayed
+        self.msgs = []  # List messages in frame in order
+        self.configuring = False
 
         # Initialize Canvas to hold 'scrollable' frame
         self.canvas = tk.Canvas(self, bg='red', highlightthickness=0)
@@ -118,8 +119,17 @@ class MessageFrame(ttk.Frame):
 
     # CALLBACKS
     def __on_canvas_configure(self, event):
-        canvas_width = event.width
-        self.canvas.itemconfigure(self.canvas_frame_id, width=canvas_width)
+        if not self.configuring:
+            # Configure and then delay until next config to lower CPU load
+            self.configuring = True
+
+            width = event.width
+            self.__configure_canvas(width, False)
+            self.after(75, self.__configure_canvas, width, True)
+
+    def __configure_canvas(self, width, reset):
+        self.canvas.itemconfigure(self.canvas_frame_id, width=width)
+        self.configuring = not reset
 
     def __update_scrollregion(self, event=None):
         self.canvas.configure(scrollregion=self.canvas.bbox(tk.ALL))
