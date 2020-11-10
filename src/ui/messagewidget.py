@@ -35,8 +35,6 @@ class MessageWidget(ttk.Frame):
                                        text=timestamp_lbl,
                                        style='MsgTimestamp.TLabel')
 
-        self.bind('<Configure>', self.text.on_configure)
-
     def set_text(self, text):
         # Insert and place text
         self.text.insert(1.0, text)
