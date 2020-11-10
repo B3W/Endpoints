@@ -26,7 +26,6 @@ class MessageFrame(ScrollableFrame):
         :param master: The container holding this frame
         :param name: Friendly name of Endpoint communicating with
         '''
-        # Initialize frame holding Canvas
         ScrollableFrame.__init__(self,
                                  master,
                                  mw.MessageWidget.set_visible,
