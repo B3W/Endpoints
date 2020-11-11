@@ -26,12 +26,12 @@ class MessageFrame(ScrollableFrame):
         :param master: The container holding this frame
         :param name: Friendly name of Endpoint communicating with
         '''
-        ScrollableFrame.__init__(self,
-                                 master,
+        ScrollableFrame.__init__(self, master,
+                                 MessageFrame._MSG_Y_PAD[0],
+                                 MessageFrame._SENT_X_PAD[0],
                                  mw.MessageWidget.set_visible,
                                  mw.MessageWidget.set_hidden,
-                                 *args,
-                                 **kwargs)
+                                 *args, **kwargs)
         self.active = False
         self.correspondent_name = name
 
@@ -72,8 +72,10 @@ class MessageFrame(ScrollableFrame):
                           padx=MessageFrame._RECV_X_PAD,
                           pady=MessageFrame._MSG_Y_PAD)
 
-        self.widgets.insert(0, text_msg)
+        self.widgets.append(text_msg)
         self.num_widgets += 1
+
+        self.update_idletasks()  # Allow UI to update
         self._check_visible_widget_range()
         self.scroll_bottom()
 

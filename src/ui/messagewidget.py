@@ -16,8 +16,13 @@ class MessageWidget(ttk.Frame):
         self.author_name = ''
         self.is_host = False
         self.visible = False
-        self.wtype = WidgetType.WTYPE_LEAF
+        self.wtype = WidgetType.WTYPE_ROOT_CONTAINER
         self.depth = 0
+
+        # Initialize root grid
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=0)
+        self.rowconfigure(1, weight=0)
 
         # Main message area
         # NOTE  Default height to 1 so that it does not attempt to fill up
@@ -30,19 +35,25 @@ class MessageWidget(ttk.Frame):
                                   highlightthickness=2,
                                   height=1)
         self.text.wtype = WidgetType.WTYPE_LEAF
-        self.text.depth = self.master.depth + 1
+        self.text.depth = self.text.master.depth + 1
+
+        # Frame containing author, timestamp, etc...
+        self.metadata_frame = ttk.Frame(self)
+        self.metadata_frame.wtype = WidgetType.WTYPE_LEAF
+        self.metadata_frame.depth = self.metadata_frame.master.depth + 1
+        self.metadata_frame.grid(column=0, row=0, sticky=tk.EW)
 
         # Author ID
-        self.author_lbl = ttk.Label(self)
+        self.author_lbl = ttk.Label(self.metadata_frame)
         self.author_lbl.wtype = WidgetType.WTYPE_LEAF
-        self.author_lbl.depth = self.master.depth + 1
+        self.author_lbl.depth = self.author_lbl.master.depth + 1
 
         # Timestamp
-        self.timestamp_lbl = ttk.Label(self,
+        self.timestamp_lbl = ttk.Label(self.metadata_frame,
                                        text=timestamp_lbl,
                                        style='MsgTimestamp.TLabel')
         self.timestamp_lbl.wtype = WidgetType.WTYPE_LEAF
-        self.timestamp_lbl.depth = self.master.depth + 1
+        self.timestamp_lbl.depth = self.timestamp_lbl.master.depth + 1
 
     def set_text(self, text):
         # Insert and place text
@@ -68,18 +79,19 @@ class MessageWidget(ttk.Frame):
     def place_message(self, sticky):
         # Places message widget on specific side
         if tk.W in sticky:
-            self.author_lbl.pack(side=tk.TOP, anchor=tk.W)
-            self.timestamp_lbl.pack(side=tk.TOP, anchor=tk.W)
-            self.text.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            self.author_lbl.pack(side=tk.LEFT)
+            self.timestamp_lbl.pack(side=tk.LEFT)
 
         else:
-            self.timestamp_lbl.pack(side=tk.TOP, anchor=tk.E)
-            self.author_lbl.pack(side=tk.TOP, anchor=tk.E)
-            self.text.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+            self.timestamp_lbl.pack(side=tk.RIGHT)
+            self.author_lbl.pack(side=tk.RIGHT)
+
+        self.text.grid(column=0, row=1, sticky=sticky)
 
     def set_visible(self):
         self.visible = True
         self.bind('<Configure>', self.text.on_configure)
+        print(f'visible: {self.text.get(1.0, "end-1c")}')
 
     def set_hidden(self):
         self.visible = False

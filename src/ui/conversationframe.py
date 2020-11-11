@@ -15,7 +15,7 @@ class ConversationFrame(ttk.Frame):
     _ENTRY_X_PAD = (10, 0)  # 'X' pad for msg entry (l-pad, r-pad)
     _SEND_BTN_X_PAD = (0, 10)  # 'X' pad for send btn (l-pad, r-pad)
     _MSG_FRAME_X_PAD = (0, 10)  # 'X' pad around msg frame
-    _MSG_FRAME_Y_PAD = (10, 10)  # 'Y' pad around msg frame
+    _MSG_FRAME_Y_PAD = (0, 0)  # 'Y' pad around msg frame
 
     def __init__(self, master, host_id, *args, **kwargs):
         '''
@@ -96,7 +96,7 @@ class ConversationFrame(ttk.Frame):
                                        pady=ConversationFrame._MSG_FRAME_Y_PAD,
                                        sticky=(tk.N, tk.S, tk.E, tk.W))
 
-        self.update()  # Wait for UI to update
+        self.update_idletasks()  # Wait for UI to update
         self.conversations[ident].set_active()
         self.active_conversation_id = ident
 
