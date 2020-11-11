@@ -32,7 +32,7 @@ class EndpointUI(ttk.Frame):
                         font=Fonts.get('MessageAuthor'))
 
         style.configure('MsgAuthorHost.TLabel',
-                        foreground='orange red',
+                        foreground='tomato',
                         font=Fonts.get('MessageAuthor'))
 
         style.configure('MsgTimestamp.TLabel',
