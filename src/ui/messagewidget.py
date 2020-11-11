@@ -91,7 +91,9 @@ class MessageWidget(ttk.Frame):
     def set_visible(self):
         self.visible = True
         self.bind('<Configure>', self.text.on_configure)
-        print(f'visible: {self.text.get(1.0, "end-1c")}')
+
+        # TODO Should this be added?
+        # self.event_generate('<Configure>', width=self.winfo_width)
 
     def set_hidden(self):
         self.visible = False
