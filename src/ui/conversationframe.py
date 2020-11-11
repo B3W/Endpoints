@@ -87,6 +87,7 @@ class ConversationFrame(ttk.Frame):
         self.__hide_no_conversations_hint()
 
         if self.active_conversation_id:
+            self.conversations[self.active_conversation_id].set_inactive()
             self.conversations[self.active_conversation_id].grid_forget()
 
         # Place the newly active conversation into the UI
@@ -95,12 +96,16 @@ class ConversationFrame(ttk.Frame):
                                        pady=ConversationFrame._MSG_FRAME_Y_PAD,
                                        sticky=(tk.N, tk.S, tk.E, tk.W))
 
+        self.update()  # Wait for UI to update
+        self.conversations[ident].set_active()
         self.active_conversation_id = ident
 
     def remove_conversation(self, ident):
         '''
         :param ident: ID of conversations to delete
         '''
+        self.conversations[ident].set_inactive()
+
         # Remove MessageFrame from UI if it is active
         if ident == self.active_conversation_id:
             self.conversations[ident].grid_forget()

@@ -32,7 +32,7 @@ class MessageFrame(ScrollableFrame):
                                  mw.MessageWidget.set_hidden,
                                  *args,
                                  **kwargs)
-
+        self.active = False
         self.correspondent_name = name
 
     def add_text_message(self, ident, timestamp, text):
@@ -76,3 +76,17 @@ class MessageFrame(ScrollableFrame):
         self.num_widgets += 1
         self._check_visible_widget_range()
         self.scroll_bottom()
+
+    def set_active(self):
+        self.active = True
+        self.initial_check = False
+        self._check_visible_widget_range()
+
+    def set_inactive(self):
+        self.active = False
+
+    def _check_visible_widget_range(self):
+        if not self.active:
+            return
+
+        super(MessageFrame, self)._check_visible_widget_range()
