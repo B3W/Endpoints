@@ -40,9 +40,9 @@ class ScrollableFrame(ttk.Frame):
         self.depth = 0  # Attibute indicating 'distance' from root container
         self.initial_check = False
         self.visible_start_index = -1
-        self.VISIBLE_START_INDEX_BUFFER = 3
+        self.VISIBLE_START_INDEX_BUFFER = 2
         self.visible_end_index = -1
-        self.VISIBLE_END_INDEX_BUFFER = 3
+        self.VISIBLE_END_INDEX_BUFFER = 2
         self.show_function = sfunc
         self.hide_function = hfunc
 

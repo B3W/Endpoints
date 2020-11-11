@@ -2,7 +2,7 @@
 '''
 import config as c
 import messagewidget as mw
-from scrollableframe import ScrollableFrame, WidgetType
+from scrollableframe import ScrollableFrame
 import timeutils
 import tkinter as tk
 
@@ -50,13 +50,11 @@ class MessageFrame(ScrollableFrame):
         # Create and configure message
         fmt_ts = timeutils.format_timestamp(timestamp)
         text_msg = mw.MessageWidget(self.widget_frame, fmt_ts)
-        text_msg.wtype = WidgetType.WTYPE_LEAF
-        text_msg.depth = text_msg.master.depth + 1
         text_msg.set_text(text)
 
         if ident == c.Config.get(c.ConfigEnum.ENDPOINT_GUID):
             # The host sent this message
-            text_msg.set_author('Me', ident)
+            text_msg.set_author('Me', ident, True)
             text_msg.place_message(MessageFrame._SENT_STICKY)
 
             text_msg.grid(column=0, row=self.num_widgets,
@@ -66,7 +64,7 @@ class MessageFrame(ScrollableFrame):
 
         else:
             # Someone other than the host sent the message
-            text_msg.set_author(self.correspondent_name, ident)
+            text_msg.set_author(self.correspondent_name, ident, False)
             text_msg.place_message(MessageFrame._RECV_STICKY)
 
             text_msg.grid(column=0, row=self.num_widgets,
