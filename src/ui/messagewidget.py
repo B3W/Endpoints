@@ -92,8 +92,9 @@ class MessageWidget(ttk.Frame):
         self.visible = True
         self.bind('<Configure>', self.text.on_configure)
 
-        # TODO Should this be added?
-        # self.event_generate('<Configure>', width=self.winfo_width)
+        # Resize the widget when it is set visible as it does not
+        # configuring itself when it is hidden
+        self.event_generate('<Configure>', width=self.winfo_width())
 
     def set_hidden(self):
         self.visible = False
