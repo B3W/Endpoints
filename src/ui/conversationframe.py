@@ -7,6 +7,10 @@ import datapassing_protocol as dproto
 import datapassing
 import tkinter as tk
 from tkinter import ttk
+import logging
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class ConversationFrame(ttk.Frame):
@@ -53,23 +57,23 @@ class ConversationFrame(ttk.Frame):
         self.msg_entry.bind('<Return>', self.__send_text_message)
 
         # Send button for sending the content in the message entry
-        self.msg_send = ttk.Button(self, text='Send',
-                                   command=self.__send_text_message)
+        self.msg_send_btn = ttk.Button(self, text='Send',
+                                       command=self.__send_text_message)
 
-        self.msg_send.bind('<Return>', self.__send_text_message)
+        self.msg_send_btn.bind('<Return>', self.__send_text_message)
 
         # Place widgets
         self.msg_entry.grid(column=0, row=1,
                             padx=ConversationFrame._ENTRY_X_PAD,
                             sticky=(tk.E, tk.W))
 
-        self.msg_send.grid(column=1, row=1,
-                           padx=ConversationFrame._SEND_BTN_X_PAD,
-                           sticky=(tk.W,))
+        self.msg_send_btn.grid(column=1, row=1,
+                               padx=ConversationFrame._SEND_BTN_X_PAD,
+                               sticky=(tk.W,))
 
         # Implement load previous conversations?
         if len(self.conversations) == 0:
-            self.__show_no_conversations_hint()
+            self.__set_conversation_area_inactive()
 
     def add_conversation(self, ident, name):
         '''
@@ -84,7 +88,7 @@ class ConversationFrame(ttk.Frame):
         if ident == self.active_conversation_id:
             return
 
-        self.__hide_no_conversations_hint()
+        self.__set_conversation_area_active()
 
         if self.active_conversation_id:
             self.conversations[self.active_conversation_id].set_inactive()
@@ -110,17 +114,18 @@ class ConversationFrame(ttk.Frame):
         if ident == self.active_conversation_id:
             self.conversations[ident].grid_forget()
             self.active_conversation_id = b''
+            self.__set_conversation_area_inactive()
 
         # Delete the MessageFrame
         try:
             self.conversations[ident].destroy()
             del self.conversations[ident]
         except IndexError:
-            # Attempted to delete conversation that does not exist
-            pass
+            # Conversation designated by 'ident' does not exist
+            _g_logger.error('Tried to delete conversation that does not exist')
 
         if len(self.conversations) == 0:
-            self.__show_no_conversations_hint()
+            self.__set_conversation_area_inactive()
 
     def report_text_message(self, ident, timestamp, text):
         '''
@@ -132,10 +137,14 @@ class ConversationFrame(ttk.Frame):
         '''
         self.conversations[ident].add_text_message(ident, timestamp, text)
 
-    def __show_no_conversations_hint(self):
+    def __set_conversation_area_inactive(self):
+        self.msg_entry.grid_remove()
+        self.msg_send_btn.grid_remove()
         self.no_conversation_label.grid(column=0, row=0)
 
-    def __hide_no_conversations_hint(self):
+    def __set_conversation_area_active(self):
+        self.msg_entry.grid()
+        self.msg_send_btn.grid()
         self.no_conversation_label.grid_forget()
 
     # CALLBACKS
@@ -163,4 +172,8 @@ class ConversationFrame(ttk.Frame):
                 self.msg_entry.delete(0, tk.END)  # Clear entry on send
 
             except queue.Full:
-                print('Failed to push message into sending queue')
+                # Message passing queue is full
+                _g_logger.error('Failed to push message into sending queue')
+
+        # Keep focus in the message entry
+        self.msg_entry.focus_set()
