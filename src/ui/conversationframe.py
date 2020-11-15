@@ -1,5 +1,6 @@
 '''
 '''
+import entryframe as ef
 import messageframe as mf
 import queue
 import timeutils
@@ -15,6 +16,7 @@ _g_logger = logging.getLogger(__name__)
 
 class ConversationFrame(ttk.Frame):
     '''UI element displaying relevant information of current conversation'''
+    _ENTRY_MAX_LINES = 4  # Max number of lines entry can expand to
     _ENTRY_ROW_PAD = 20  # Padding for row containing msg entry/msg send btn
     _ENTRY_X_PAD = (10, 0)  # 'X' pad for msg entry (l-pad, r-pad)
     _SEND_BTN_X_PAD = (0, 10)  # 'X' pad for send btn (l-pad, r-pad)
@@ -52,24 +54,24 @@ class ConversationFrame(ttk.Frame):
                                                style='EmptyArea.TLabel')
 
         # Entry area for entering a new message
-        # TODO Change to Text widget for multiline/non-text
-        self.msg_entry = ttk.Entry(self)
-        self.msg_entry.bind('<Return>', self.__send_text_message)
+        self.entry_area = ef.EntryFrame(self,
+                                        ConversationFrame._ENTRY_MAX_LINES)
+        self.entry_area.bind('<<Send>>', self.__send_text_message)
 
         # Send button for sending the content in the message entry
-        self.msg_send_btn = ttk.Button(self, text='Send',
-                                       command=self.__send_text_message)
+        self.send_btn = ttk.Button(self, text='Send',
+                                   command=self.__send_text_message)
 
-        self.msg_send_btn.bind('<Return>', self.__send_text_message)
+        self.send_btn.bind('<Return>', self.__send_text_message)
 
         # Place widgets
-        self.msg_entry.grid(column=0, row=1,
-                            padx=ConversationFrame._ENTRY_X_PAD,
-                            sticky=(tk.E, tk.W))
+        self.entry_area.grid(column=0, row=1,
+                             padx=ConversationFrame._ENTRY_X_PAD,
+                             sticky=tk.EW)
 
-        self.msg_send_btn.grid(column=1, row=1,
-                               padx=ConversationFrame._SEND_BTN_X_PAD,
-                               sticky=(tk.W,))
+        self.send_btn.grid(column=1, row=1,
+                           padx=ConversationFrame._SEND_BTN_X_PAD,
+                           sticky=tk.W)
 
         # Implement load previous conversations?
         if len(self.conversations) == 0:
@@ -138,19 +140,19 @@ class ConversationFrame(ttk.Frame):
         self.conversations[ident].add_text_message(ident, timestamp, text)
 
     def __set_conversation_area_inactive(self):
-        self.msg_entry.grid_remove()
-        self.msg_send_btn.grid_remove()
+        self.entry_area.grid_remove()
+        self.send_btn.grid_remove()
         self.no_conversation_label.grid(column=0, row=0)
 
     def __set_conversation_area_active(self):
-        self.msg_entry.grid()
-        self.msg_send_btn.grid()
+        self.entry_area.grid()
+        self.send_btn.grid()
         self.no_conversation_label.grid_forget()
 
     # CALLBACKS
     def __send_text_message(self, event=None):
         '''Callback that sends a message in the active conversation'''
-        msg_data = self.msg_entry.get().strip()
+        msg_data = self.entry_area.get().strip()
 
         if self.active_conversation_id and msg_data:
             # Construct message to send
@@ -169,11 +171,11 @@ class ConversationFrame(ttk.Frame):
                 active_frame = self.conversations[self.active_conversation_id]
                 active_frame.add_text_message(self.host_id, ts, msg_data)
 
-                self.msg_entry.delete(0, tk.END)  # Clear entry on send
+                self.entry_area.clear()  # Clear entry on send
 
             except queue.Full:
                 # Message passing queue is full
                 _g_logger.error('Failed to push message into sending queue')
 
         # Keep focus in the message entry
-        self.msg_entry.focus_set()
+        self.entry_area.focus()
