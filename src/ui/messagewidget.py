@@ -28,7 +28,7 @@ class MessageWidget(ttk.Frame):
         # NOTE  Default height to 1 so that it does not attempt to fill up
         #       available space causing screen flicker and grid calculation lag
         self.text = ResizableText(self,
-                                  Fonts.get('MessageText'),
+                                  font=Fonts.get('MessageText'),
                                   relief=tk.FLAT,
                                   wrap='word',
                                   highlightbackground="light grey",
@@ -94,7 +94,7 @@ class MessageWidget(ttk.Frame):
 
         # Resize the widget when it is set visible as it does not
         # configuring itself when it is hidden
-        self.event_generate('<Configure>', width=self.winfo_width())
+        self.event_generate('<Configure>')
 
     def set_hidden(self):
         self.visible = False
