@@ -19,6 +19,7 @@ class EndpointUI(ttk.Frame):
         # Initialize root window
         ttk.Frame.__init__(self, master, *args, **kwargs)
         master.title(f'Endpoints')
+        master.configure(background='gray95')
 
         # Configure fonts
         Fonts.init()
@@ -28,7 +29,7 @@ class EndpointUI(ttk.Frame):
 
         # MessageFrame styles
         style.configure('MsgAuthor.TLabel',
-                        foreground='dark grey',
+                        foreground='dark gray',
                         font=Fonts.get('MessageAuthor'))
 
         style.configure('MsgAuthorHost.TLabel',
@@ -36,11 +37,13 @@ class EndpointUI(ttk.Frame):
                         font=Fonts.get('MessageAuthor'))
 
         style.configure('MsgTimestamp.TLabel',
-                        foreground='grey',
+                        foreground='gray',
                         font=Fonts.get('MessageTimestamp'))
 
+        style.configure('EntryArea.TFrame', background='gray95')
+
         style.configure('EmptyArea.TLabel',
-                        foreground='grey',
+                        foreground='gray',
                         anchor=tk.CENTER,
                         font=Fonts.get('EmptyArea'))
 

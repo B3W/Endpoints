@@ -8,15 +8,17 @@ class Fonts(object):
     @staticmethod
     def init():
         ''' Initialize all fonts '''
-        Fonts._font_map['MessageAuthor'] = Font(family="Courier",
-                                                size=14,
+        Fonts._font_map['MessageAuthor'] = Font(family="Ariel",
+                                                size=10,
                                                 weight='bold')
-        Fonts._font_map['MessageTimestamp'] = Font(family="Courier",
+
+        Fonts._font_map['MessageTimestamp'] = Font(family="Ariel",
                                                    size=8,
                                                    slant='italic')
-        Fonts._font_map['MessageText'] = Font(family="Courier", size=12)
 
-        Fonts._font_map['EmptyArea'] = Font(family="Courier", size=12)
+        Fonts._font_map['MessageText'] = Font(family="Ariel", size=12)
+        Fonts._font_map['EntryText'] = Font(family="Ariel", size=12)
+        Fonts._font_map['EmptyArea'] = Font(family="Ariel", size=12)
 
     @staticmethod
     def get(font_name):

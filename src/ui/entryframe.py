@@ -1,4 +1,5 @@
 import autoscrollbar as asb
+from fonts import Fonts
 import multilineentry as me
 import tkinter as tk
 from tkinter import ttk
@@ -20,6 +21,7 @@ class EntryFrame(ttk.Frame):
         # Initialize multiline entry widget
         self.entry = me.MultilineEntry(self,
                                        self.MAX_LINES,
+                                       font=Fonts.get('EntryText'),
                                        relief=tk.FLAT,
                                        wrap='word',
                                        highlightbackground="light grey",

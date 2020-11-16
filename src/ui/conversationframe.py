@@ -17,9 +17,10 @@ _g_logger = logging.getLogger(__name__)
 class ConversationFrame(ttk.Frame):
     '''UI element displaying relevant information of current conversation'''
     _ENTRY_MAX_LINES = 4  # Max number of lines entry can expand to
-    _ENTRY_ROW_PAD = 20  # Padding for row containing msg entry/msg send btn
-    _ENTRY_X_PAD = (10, 0)  # 'X' pad for msg entry (l-pad, r-pad)
-    _SEND_BTN_X_PAD = (0, 10)  # 'X' pad for send btn (l-pad, r-pad)
+    _ENTRY_X_PAD = (10, 5)  # 'X' pad for msg entry (l-pad, r-pad)
+    _ENTRY_Y_PAD = (15, 10)  # 'Y' pad for msg entry (t-pad, b-pad)
+    _SEND_BTN_X_PAD = (5, 10)  # 'X' pad for send btn (l-pad, r-pad)
+    _SEND_BTN_Y_PAD = (15, 10)  # 'Y' pad for send btn (t-pad, b-pad)
     _MSG_FRAME_X_PAD = (0, 10)  # 'X' pad around msg frame
     _MSG_FRAME_Y_PAD = (0, 0)  # 'Y' pad around msg frame
 
@@ -36,9 +37,8 @@ class ConversationFrame(ttk.Frame):
 
         # Configure frame's grid
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=0)
-        self.rowconfigure(0, weight=4)
-        self.rowconfigure(1, weight=0, pad=ConversationFrame._ENTRY_ROW_PAD)
+        self.rowconfigure(0, weight=4)  # Message area
+        self.rowconfigure(1, weight=0)  # Entry area/Send button
 
         # Initialize MessageFrame class with the appropriate host ID
         mf.MessageFrame.host_id = self.host_id
@@ -53,24 +53,31 @@ class ConversationFrame(ttk.Frame):
                                                text=hint_text,
                                                style='EmptyArea.TLabel')
 
+        # Frame containing entry area and send button
+        self.bottom_frame = ttk.Frame(self, style='EntryArea.TFrame')
+        self.bottom_frame.columnconfigure(0, weight=1)
+        self.bottom_frame.columnconfigure(1, weight=0)
+        self.bottom_frame.rowconfigure(0, weight=0)
+        self.bottom_frame.grid(column=0, row=1, sticky=tk.EW)
+
         # Entry area for entering a new message
-        self.entry_area = ef.EntryFrame(self,
+        self.entry_area = ef.EntryFrame(self.bottom_frame,
                                         ConversationFrame._ENTRY_MAX_LINES)
+
         self.entry_area.bind('<<Send>>', self.__send_text_message)
+        self.entry_area.grid(column=0, row=0,
+                             padx=ConversationFrame._ENTRY_X_PAD,
+                             pady=ConversationFrame._ENTRY_Y_PAD,
+                             sticky=tk.EW)
 
         # Send button for sending the content in the message entry
-        self.send_btn = ttk.Button(self, text='Send',
+        self.send_btn = ttk.Button(self.bottom_frame, text='Send',
                                    command=self.__send_text_message)
 
         self.send_btn.bind('<Return>', self.__send_text_message)
-
-        # Place widgets
-        self.entry_area.grid(column=0, row=1,
-                             padx=ConversationFrame._ENTRY_X_PAD,
-                             sticky=tk.EW)
-
-        self.send_btn.grid(column=1, row=1,
+        self.send_btn.grid(column=1, row=0,
                            padx=ConversationFrame._SEND_BTN_X_PAD,
+                           pady=ConversationFrame._SEND_BTN_Y_PAD,
                            sticky=tk.W)
 
         # Implement load previous conversations?
@@ -140,13 +147,11 @@ class ConversationFrame(ttk.Frame):
         self.conversations[ident].add_text_message(ident, timestamp, text)
 
     def __set_conversation_area_inactive(self):
-        self.entry_area.grid_remove()
-        self.send_btn.grid_remove()
+        self.bottom_frame.grid_remove()
         self.no_conversation_label.grid(column=0, row=0)
 
     def __set_conversation_area_active(self):
-        self.entry_area.grid()
-        self.send_btn.grid()
+        self.bottom_frame.grid()
         self.no_conversation_label.grid_forget()
 
     # CALLBACKS
