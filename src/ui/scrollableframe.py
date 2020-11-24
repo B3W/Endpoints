@@ -34,7 +34,11 @@ class SimpleScrollableFrame(ttk.Frame):
         self.configuring = False
 
         # Initialize Canvas to hold 'scrollable' frame
-        self.canvas = tk.Canvas(self, highlightthickness=0)
+        # NOTE  Specify initial width so canvas is not wider than it should be
+        self.canvas = tk.Canvas(self,
+                                highlightthickness=0,
+                                width=150,
+                                background='white')
         self.canvas.grid(column=0, row=0, sticky=tk.NSEW)
 
         # Initialize vertical AutoScrollbar and link to the Canvas
