@@ -107,7 +107,7 @@ class ConversationFrame(ttk.Frame):
         self.conversations[ident].grid(column=0, row=0, columnspan=2,
                                        padx=ConversationFrame._MSG_FRAME_X_PAD,
                                        pady=ConversationFrame._MSG_FRAME_Y_PAD,
-                                       sticky=(tk.N, tk.S, tk.E, tk.W))
+                                       sticky=tk.NSEW)
 
         self.update_idletasks()  # Wait for UI to update
         self.conversations[ident].set_active()
