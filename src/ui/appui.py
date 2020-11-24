@@ -40,12 +40,19 @@ class EndpointUI(ttk.Frame):
                         foreground='gray',
                         font=Fonts.get('MessageTimestamp'))
 
-        style.configure('EntryArea.TFrame', background='gray95')
+        style.configure('EntryArea.TFrame',
+                        background='gray95')
 
         style.configure('EmptyArea.TLabel',
                         foreground='gray',
                         anchor=tk.CENTER,
                         font=Fonts.get('EmptyArea'))
+
+        style.configure('Listbox.TFrame',
+                        background='white')
+
+        style.configure('Sidebar.TFrame',
+                        background='white')
 
         self.poll_id = None
 
@@ -60,11 +67,11 @@ class EndpointUI(ttk.Frame):
 
         # Root frame grid
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=4)
+        self.columnconfigure(1, weight=5)
         self.rowconfigure(0, weight=1)
 
         # Place root frame
-        self.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+        self.grid(column=0, row=0, sticky=tk.NSEW)
 
         # Configure window menu
         self.menu = mb.MenuBar(master, master.destroy)
@@ -72,16 +79,16 @@ class EndpointUI(ttk.Frame):
 
         # Configure main area
         self.convo_mgr = cf.ConversationFrame(self, host_guid)
-        self.convo_mgr.grid(column=1, row=0,
-                            sticky=(tk.N, tk.S, tk.E, tk.W))
+        self.convo_mgr.grid(column=1, row=0, sticky=tk.NSEW)
 
         # Configure side bar
         self.side_panel = sb.SideBar(self,
                                      self.convo_mgr.add_conversation,
                                      self.convo_mgr.activate_conversation,
-                                     self.convo_mgr.remove_conversation)
+                                     self.convo_mgr.remove_conversation,
+                                     style='Sidebar.TFrame')
 
-        self.side_panel.grid(column=0, row=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+        self.side_panel.grid(column=0, row=0, sticky=tk.NSEW)
 
         # Begin polling of queues
         self.__poll(in_q)
