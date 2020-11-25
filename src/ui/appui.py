@@ -63,11 +63,10 @@ class EndpointUI(ttk.Frame):
         # Initialize root window grid
         master.columnconfigure(0, weight=1)
         master.rowconfigure(0, weight=1)
-        master.minsize(width=700, height=400)
+        master.minsize(width=600, height=300)
 
         # Root frame grid
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=5)
         self.rowconfigure(0, weight=1)
 
         # Place root frame
@@ -77,9 +76,12 @@ class EndpointUI(ttk.Frame):
         self.menu = mb.MenuBar(master, master.destroy)
         master.configure(menu=self.menu)
 
+        # Paned window to hold the conversation area
+        self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        self.paned_window.grid(column=0, row=0, sticky=tk.NSEW)
+
         # Configure main area
         self.convo_mgr = cf.ConversationFrame(self, host_guid)
-        self.convo_mgr.grid(column=1, row=0, sticky=tk.NSEW)
 
         # Configure side bar
         self.side_panel = sb.SideBar(self,
@@ -88,7 +90,9 @@ class EndpointUI(ttk.Frame):
                                      self.convo_mgr.remove_conversation,
                                      style='Sidebar.TFrame')
 
-        self.side_panel.grid(column=0, row=0, sticky=tk.NSEW)
+        # Place sidebar in left pane and conversation area in right pane
+        self.paned_window.add(self.side_panel)
+        self.paned_window.add(self.convo_mgr)
 
         # Begin polling of queues
         self.__poll(in_q)
