@@ -74,12 +74,10 @@ class SimpleScrollableFrame(ttk.Frame):
     def __on_canvas_configure(self, event):
         '''Callback for canvas's <Configure> event'''
         if not self.configuring:
-            # Configure and then delay until next config to lower CPU load
             self.configuring = True
 
             width = event.width
-            self.__configure_canvas(width, False)
-            self.after(75, self.__configure_canvas, width, True)
+            self.__configure_canvas(width, True)
 
     def __configure_canvas(self, width, reset):
         self.canvas.itemconfigure(self.cframe_id, width=width)
