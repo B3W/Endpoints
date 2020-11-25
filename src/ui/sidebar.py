@@ -50,8 +50,10 @@ class SideBar(ttk.Frame):
         widget = cw.ConnectionWidget(self.listbox.widget_frame,
                                      ident,
                                      conn_name)
+        widget.grid(padx=(0, 0), pady=(0, 0), sticky=tk.EW)
 
         self.listbox.insert(tk.END, widget)
+        self.update_idletasks()
 
     def remove_connection(self, ident):
         '''
@@ -84,14 +86,8 @@ class SideBar(ttk.Frame):
         widget = event.widget
 
         # Determine connection to activate
-        try:
-            index = int(widget.curselection()[0])
-
-        except IndexError:
-            # 'curselection' returned empty list
-            return
-
-        connection = widget.get(index)
+        connection = widget.get(tk.ACTIVE)
 
         # Notify ConversationFrame of activation
-        self.activate_callback(connection.ident)
+        if connection is not None:
+            self.activate_callback(connection.guid)
