@@ -12,6 +12,10 @@ def start(host_guid, in_q):
 
     # Run UI
     root = tk.Tk()
+    icon = tk.PhotoImage(file='assets/Endpoints-Icon-2-32x32.png')
+    root.image = icon
+    root.iconphoto(True, icon)
+
     gui = appui.EndpointUI(root, host_guid, in_q)
 
     logger.info('Opening UI...')
