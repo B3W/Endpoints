@@ -68,6 +68,7 @@ class SideBar(ttk.Frame):
         for widget in self.listbox.get(0, tk.END):
             if widget.guid == ident:
                 index = counter
+                break
 
             counter += 1
 
@@ -80,6 +81,15 @@ class SideBar(ttk.Frame):
 
         # Remove conversation from ConversationFrame
         self.remove_callback(ident)
+
+    def report_message(self, ident):
+        '''Notifies connection widget that a message was recieved'''
+        # Get the widget associated with the ID
+        for widget in self.listbox.get(0, tk.END):
+            if widget.guid == ident:
+                # Let connection widget know connection recieved message
+                widget.notify()
+                break
 
     # CALLBACKS
     def __on_connection_select(self, event):
