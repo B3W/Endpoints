@@ -48,11 +48,31 @@ class EndpointUI(ttk.Frame):
                         anchor=tk.CENTER,
                         font=Fonts.get('EmptyArea'))
 
+        style.configure('Sidebar.TFrame',
+                        background='white')
+
         style.configure('Listbox.TFrame',
                         background='white')
 
-        style.configure('Sidebar.TFrame',
+        style.configure('ConnectionWidget.TFrame',
                         background='white')
+
+        style.configure('Unselected.ConnectionWidget.TFrame',
+                        background='white')
+
+        style.configure('Selected.ConnectionWidget.TFrame',
+                        background='light sky blue')
+
+        style.configure('ConnectionWidget.TLabel',
+                        background='red',
+                        padx=5,
+                        pady=5)
+
+        style.configure('Unselected.ConnectionWidget.TLabel',
+                        background='white')
+
+        style.configure('Selected.ConnectionWidget.TLabel',
+                        background='light sky blue')
 
         self.poll_id = None
 
@@ -105,6 +125,9 @@ class EndpointUI(ttk.Frame):
             qdata = data_q.get_nowait()
 
             if qdata.msg_type == dproto.DPMsgType.DPMSG_TYPE_TEXT_MSG:
+                # Report message to the Sidebar
+                self.side_panel.report_message(qdata.destination_id)
+
                 # Report message to the ConversationFrame
                 self.convo_mgr.report_text_message(qdata.destination_id,
                                                    qdata.timestamp,
