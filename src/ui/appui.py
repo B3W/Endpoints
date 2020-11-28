@@ -65,8 +65,8 @@ class EndpointUI(ttk.Frame):
 
         style.configure('ConnectionWidget.TLabel',
                         background='red',
-                        padx=5,
-                        pady=5)
+                        anchor=tk.W,
+                        padding=(5, 15))
 
         style.configure('Unselected.ConnectionWidget.TLabel',
                         background='white')
