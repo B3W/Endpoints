@@ -12,7 +12,7 @@ def start(host_guid, in_q):
 
     # Run UI
     root = tk.Tk()
-    icon = tk.PhotoImage(file='assets/Endpoints-Icon-2-32x32.png')
+    icon = tk.PhotoImage(file='assets/Endpoints-Icon-3-16x16.png')
     root.image = icon
     root.iconphoto(True, icon)
 
