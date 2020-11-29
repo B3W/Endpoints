@@ -44,7 +44,9 @@ class ConnectionWidget(ttk.Frame):
         notify_image = tk.PhotoImage(file=notify_image_path)
 
         # Initialize label for holding notification icon
-        self.notify_lbl = ttk.Label(self, image=notify_image)
+        self.notify_lbl = ttk.Label(self,
+                                    image=notify_image,
+                                    style='ConnectionWidget.TLabel')
         self.notify_lbl.image = notify_image  # Keep reference to image
         self.notify_lbl.grid(column=1, row=0)
         self.notify_lbl.grid_remove()
