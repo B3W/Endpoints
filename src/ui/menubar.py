@@ -2,6 +2,7 @@
 Module providing Menu implementation for top level window's menu bar.
 '''
 import tkinter as tk
+import aboutwindow as aw
 
 
 class MenuBar(tk.Menu):
@@ -19,13 +20,15 @@ class MenuBar(tk.Menu):
         self.file_menu = tk.Menu(master=self, tearoff=False)
 
         # TODO Add file menu items (order matters)
-        self.file_menu.add_command(label='Exit', command=exit_callback)
+        self.file_menu.add_command(label='Exit',
+                                   command=exit_callback)
 
         # Create help menu
         self.help_menu = tk.Menu(master=self, tearoff=False)
 
         # TODO Add help menu items (order matters)
-        self.help_menu.add_command(label='About')
+        self.help_menu.add_command(label='About',
+                                   command=lambda: aw.AboutWindow(self.master))
 
         # Add menus to menu bar (order added == left-to-right order)
         self.add_cascade(label='File', menu=self.file_menu)

@@ -74,6 +74,9 @@ class EndpointUI(ttk.Frame):
         style.configure('Selected.ConnectionWidget.TLabel',
                         background='light sky blue')
 
+        style.configure('AboutMain.TLabel',
+                        font=Fonts.get('AboutMain'))
+
         self.poll_id = None
 
         # Configure root window
@@ -113,6 +116,18 @@ class EndpointUI(ttk.Frame):
         # Place sidebar in left pane and conversation area in right pane
         self.paned_window.add(self.side_panel)
         self.paned_window.add(self.convo_mgr)
+
+        # Place window in the center of the screen
+        self.master.update_idletasks()
+        w = self.master.winfo_width()
+        h = self.master.winfo_height()
+        wscreen = self.winfo_screenwidth()
+        hscreen = self.winfo_screenheight()
+
+        x = (wscreen / 2) - (w / 2)
+        y = (hscreen / 2) - (h / 2)
+
+        self.master.geometry(f'{int(w)}x{int(h)}+{int(x)}+{int(y)}')
 
         # Begin polling of queues
         self.__poll(in_q)

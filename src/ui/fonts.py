@@ -19,6 +19,7 @@ class Fonts(object):
         Fonts._font_map['MessageText'] = Font(family="Ariel", size=12)
         Fonts._font_map['EntryText'] = Font(family="Ariel", size=12)
         Fonts._font_map['EmptyArea'] = Font(family="Ariel", size=12)
+        Fonts._font_map['AboutMain'] = Font(family="Ariel", size=14)
 
     @staticmethod
     def get(font_name):
