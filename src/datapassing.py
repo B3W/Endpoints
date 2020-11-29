@@ -72,7 +72,7 @@ def __process_msg(message):
     if mtype == dproto.DPMsgType.DPMSG_TYPE_CONNECTION:
         __process_connection_msg(message)
 
-    if mtype == dproto.DPMsgType.DPMSG_TYPE_DISCONNECT:
+    elif mtype == dproto.DPMsgType.DPMSG_TYPE_DISCONNECT:
         __process_disconnect_msg(message)
 
     elif mtype == dproto.DPMsgType.DPMSG_TYPE_TEXT_MSG:

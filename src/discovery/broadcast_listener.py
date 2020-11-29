@@ -124,8 +124,8 @@ def __mainloop(server, bcast_port, host_guid, request_queue):
                 # Potential broadcast received
                 # 'rx_addr' is sending Endpoint's socket address
                 rx_data, rx_addr = s.recvfrom(recv_buf_sz)
-                _g_logger.info('Broadcast server received \'%s\' from \'%s\'',
-                               rx_data, rx_addr)
+                _g_logger.debug('Broadcast server received \'%s\' from \'%s\'',
+                                rx_data, rx_addr)
 
                 # Check if the full message was received
                 full_message = __buffer_data(data_buffer, rx_addr, rx_data)

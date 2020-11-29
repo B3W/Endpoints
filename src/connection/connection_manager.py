@@ -306,8 +306,8 @@ def __mainloop(server):
             else:
                 # Established socket sent data
                 rx_data, rx_addr = s.recvfrom(RECV_BUF_SZ)
-                _g_logger.info('Connection server received \'%s\' from \'%s\'',
-                               rx_data, rx_addr)
+                _g_logger.debug('Connection server received %s from \'%s\'',
+                                rx_data, rx_addr)
 
                 __process_rx_data(rx_addr, rx_data, s)
 
