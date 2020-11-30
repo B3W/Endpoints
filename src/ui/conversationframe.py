@@ -8,6 +8,7 @@ import datapassing_protocol as dproto
 import datapassing
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import logging
 
 
@@ -144,7 +145,12 @@ class ConversationFrame(ttk.Frame):
         :param timestamp: ISO formatted timestamp
         :param text: Message data
         '''
-        self.conversations[ident].add_text_message(ident, timestamp, text)
+        try:
+            self.conversations[ident].add_text_message(ident, timestamp, text)
+        except IndexError:
+            # Conversation designated by 'ident' does not exist
+            err_msg = 'Message reported for conversation that does not exist'
+            _g_logger.error(err_msg)
 
     def __set_conversation_area_inactive(self):
         self.bottom_frame.grid_remove()
@@ -159,28 +165,40 @@ class ConversationFrame(ttk.Frame):
         '''Callback that sends a message in the active conversation'''
         msg_data = self.entry_area.get().strip()
 
-        if self.active_conversation_id and msg_data:
-            # Construct message to send
-            ts = timeutils.get_iso_timestamp()
+        if not msg_data:
+            # Empty message
+            messagebox.showinfo('', 'Message is empty')
+            return
 
-            dp_msg = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_BACKEND,
-                                      self.active_conversation_id,
-                                      ts,
-                                      msg_data)
+        if not self.active_conversation_id:
+            # No conversation is active
+            message_str = 'Must select conversation to send message'
+            _g_logger.error(message_str)
+            messagebox.showerror('Error', message_str)
+            return
 
-            try:
-                # Pass message to the backend
-                datapassing.pass_msg(dp_msg)
+        # Construct message to send
+        ts = timeutils.get_iso_timestamp()
 
-                # Display
-                active_frame = self.conversations[self.active_conversation_id]
-                active_frame.add_text_message(self.host_id, ts, msg_data)
+        dp_msg = dproto.DPTextMsg(dproto.DPMsgDst.DPMSG_DST_BACKEND,
+                                  self.active_conversation_id,
+                                  ts,
+                                  msg_data)
 
-                self.entry_area.clear()  # Clear entry on send
+        try:
+            # Pass message to the backend
+            datapassing.pass_msg(dp_msg)
 
-            except queue.Full:
-                # Message passing queue is full
-                _g_logger.error('Failed to push message into sending queue')
+            # Display
+            active_frame = self.conversations[self.active_conversation_id]
+            active_frame.add_text_message(self.host_id, ts, msg_data)
+
+            self.entry_area.clear()  # Clear entry on send
+
+        except queue.Full:
+            # Message passing queue is full
+            _g_logger.error('Failed to push message into sending queue')
+            messagebox.showerror('Error', 'Unable to send message')
 
         # Keep focus in the message entry
         self.entry_area.focus()
