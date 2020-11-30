@@ -6,6 +6,9 @@ import sidebar as sb
 import tkinter as tk
 from tkinter import ttk
 import queue
+import logging
+
+_g_logger = logging.getLogger(__name__)
 
 
 class EndpointUI(ttk.Frame):
@@ -159,6 +162,10 @@ class EndpointUI(ttk.Frame):
                 # Report disconnection to Sidebar and ConversationFrame
                 self.side_panel.remove_connection(qdata.endpoint_id)
                 data_q.task_done()  # Mark complete
+
+            else:
+                # Invalid queue data
+                _g_logger.debug('Invalid message on queue')
 
         except queue.Empty:
             pass  # No data in queue

@@ -11,7 +11,6 @@ from tkinter import ttk
 from tkinter import messagebox
 import logging
 
-
 _g_logger = logging.getLogger(__name__)
 
 
