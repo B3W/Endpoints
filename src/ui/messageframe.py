@@ -17,8 +17,6 @@ class MessageFrame(ScrollableFrame):
     _RECV_STICKY = tk.EW  # Side for received messages to appear in msg frame
     _MSG_Y_PAD = (20, 0)  # 'Y' pad for all msg (t-pad, b-pad)
 
-    host_id = b''  # Universal host ID of the running Endpoint
-
     def __init__(self, master, name, *args, **kwargs):
         '''
         Initializes the MessageFrame

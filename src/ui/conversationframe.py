@@ -1,5 +1,6 @@
 '''
 '''
+import config as c
 import entryframe as ef
 import messageframe as mf
 import queue
@@ -24,24 +25,19 @@ class ConversationFrame(ttk.Frame):
     _MSG_FRAME_X_PAD = (0, 10)  # 'X' pad around msg frame
     _MSG_FRAME_Y_PAD = (0, 0)  # 'Y' pad around msg frame
 
-    def __init__(self, master, host_id, *args, **kwargs):
+    def __init__(self, master, *args, **kwargs):
         '''
         :param master: The container holding this frame
-        :param host_id: Unique id for the host running the application
         '''
         # Initialize frame
         ttk.Frame.__init__(self, master, *args, **kwargs)
 
-        self.host_id = host_id
         self.active_conversation_id = b''
 
         # Configure frame's grid
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=4)  # Message area
         self.rowconfigure(1, weight=0)  # Entry area/Send button
-
-        # Initialize MessageFrame class with the appropriate host ID
-        mf.MessageFrame.host_id = self.host_id
 
         # Dictionary containing all MessageFrames w/ mapping -> {ident: frame}
         # NOTE  MessageFrames are only for displaying the messages. All info
@@ -202,8 +198,9 @@ class ConversationFrame(ttk.Frame):
             datapassing.pass_msg(dp_msg)
 
             # Display
+            host_id = c.Config.get(c.ConfigEnum.ENDPOINT_GUID)
             active_frame = self.conversations[self.active_conversation_id]
-            active_frame.add_text_message(self.host_id, ts, msg_data)
+            active_frame.add_text_message(host_id, ts, msg_data)
 
             self.entry_area.clear()  # Clear entry on send
 

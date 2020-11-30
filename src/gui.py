@@ -4,7 +4,7 @@ import tkinter as tk
 import appui
 
 
-def start(host_guid, in_q):
+def start(in_q):
     '''
     :param in_q: Queue for data coming from backend to GUI
     '''
@@ -16,7 +16,7 @@ def start(host_guid, in_q):
     root.image = icon
     root.iconphoto(True, icon)
 
-    gui = appui.EndpointUI(root, host_guid, in_q)
+    gui = appui.EndpointUI(root, in_q)
 
     logger.info('Opening UI...')
 

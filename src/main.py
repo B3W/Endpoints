@@ -129,7 +129,7 @@ def main():
     logger.info('Discovery message broadcasting complete')
 
     # Start up UI in main thread (blocks until UI is exited)
-    gui.start(host_guid, ui_queue)
+    gui.start(ui_queue)
 
     # Shutdown
     cm.kill()
