@@ -113,6 +113,9 @@ def main():
     connection_bcast_queue = queue.Queue()  # Broadcasted connection requests
     ui_queue = queue.Queue()  # Data -> UI
 
+    # Start data passing layer for getting data to/from the UI
+    datapassing.start(ui_queue)
+
     # Start TCP connection manager
     cm.start(conn_port, host_guid, connection_map)
     logger.info("Connection manager service started")
@@ -120,9 +123,6 @@ def main():
     # Start UDP listener for connection broadcasts
     bcastl.start(broadcast_port, host_guid, connection_bcast_queue)
     logger.info('Broadcast listener service started')
-
-    # Start data passing layer for getting data to/from the UI
-    datapassing.start(ui_queue)
 
     # Broadcast discovery message over network adapters
     bcast.execute(broadcast_port, host_guid, host_netid)
