@@ -10,6 +10,7 @@ class DPMsgType(enum.Enum):
     DPMSG_TYPE_CONNECTION = enum.auto()
     DPMSG_TYPE_DISCONNECT = enum.auto()
     DPMSG_TYPE_TEXT_MSG = enum.auto()
+    DPMSG_TYPE_BACKEND_ERR = enum.auto()
 
 
 @enum.unique
@@ -65,3 +66,14 @@ class DPDisconnectMsg(DPMsg):
         super().__init__(DPMsgType.DPMSG_TYPE_DISCONNECT,
                          DPMsgDst.DPMSG_DST_UI)
         self.endpoint_id = ep_id
+
+
+class DPBackendErrMsg(DPMsg):
+    '''Data passing message indicating backend encountered error'''
+    def __init__(self, err_msg):
+        '''
+        :param err_msg: String message associated with error
+        '''
+        super().__init__(DPMsgType.DPMSG_TYPE_BACKEND_ERR,
+                         DPMsgDst.DPMSG_DST_UI)
+        self.msg = err_msg
