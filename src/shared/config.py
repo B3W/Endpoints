@@ -68,8 +68,9 @@ class Config(object):
         '''
         # Validate file path
         if not os.path.isfile(config_path):
-            raise FileNotFoundError('Configuration file \'%s\' does not exist.'
-                                    % (config_path))
+            # Create missing configuration file
+            with open(config_path, 'w'):
+                pass
 
         # Update configuration
         try:
