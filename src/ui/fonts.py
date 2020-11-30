@@ -13,7 +13,7 @@ class Fonts(object):
                                                 weight='bold')
 
         Fonts._font_map['MessageTimestamp'] = Font(family="Ariel",
-                                                   size=8,
+                                                   size=7,
                                                    slant='italic')
 
         Fonts._font_map['MessageText'] = Font(family="Ariel", size=12)
