@@ -98,6 +98,14 @@ class ConversationFrame(ttk.Frame):
         if ident == self.active_conversation_id:
             return
 
+        try:
+            conversation = self.conversations[ident]
+        except IndexError:
+            # Conversation designated by 'ident' does not exist
+            err_msg = 'Tried to activate conversation that does not exist'
+            _g_logger.error(err_msg)
+            return
+
         self.__set_conversation_area_active()
 
         if self.active_conversation_id:
@@ -105,13 +113,13 @@ class ConversationFrame(ttk.Frame):
             self.conversations[self.active_conversation_id].grid_forget()
 
         # Place the newly active conversation into the UI
-        self.conversations[ident].grid(column=0, row=0, columnspan=2,
-                                       padx=ConversationFrame._MSG_FRAME_X_PAD,
-                                       pady=ConversationFrame._MSG_FRAME_Y_PAD,
-                                       sticky=tk.NSEW)
+        conversation.grid(column=0, row=0, columnspan=2,
+                          padx=ConversationFrame._MSG_FRAME_X_PAD,
+                          pady=ConversationFrame._MSG_FRAME_Y_PAD,
+                          sticky=tk.NSEW)
 
         self.update_idletasks()  # Wait for UI to update
-        self.conversations[ident].set_active()
+        conversation.set_active()
         self.active_conversation_id = ident
 
     def remove_conversation(self, ident):
@@ -132,7 +140,8 @@ class ConversationFrame(ttk.Frame):
             del self.conversations[ident]
         except IndexError:
             # Conversation designated by 'ident' does not exist
-            _g_logger.error('Tried to delete conversation that does not exist')
+            err_msg = 'Tried to delete conversation that does not exist'
+            _g_logger.error(err_msg)
 
         if len(self.conversations) == 0:
             self.__set_conversation_area_inactive()
