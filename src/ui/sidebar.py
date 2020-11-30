@@ -5,6 +5,10 @@ import connectionwidget as cw
 import customlistbox as clb
 import tkinter as tk
 from tkinter import ttk
+import logging
+
+
+_g_logger = logging.getLogger(__name__)
 
 
 class SideBar(ttk.Frame):
@@ -43,6 +47,19 @@ class SideBar(ttk.Frame):
         :param ident: ID of connection to append
         :param conn: Friendly name to append
         '''
+        # Check if connection already exists
+        connection_exists = False
+
+        for widget in self.listbox.get(0, tk.END):
+            if widget.guid == ident:
+                connection_exists = True
+                break
+
+        if connection_exists:
+            # Do not duplicate connection
+            _g_logger.debug('Reported connection already exists')
+            return
+
         # Initialize conversation for ConversationFrame
         self.add_callback(ident, conn_name)
 
@@ -74,6 +91,8 @@ class SideBar(ttk.Frame):
 
         if index == -1:
             # ID not found
+            err_msg = 'Tried to delete connection that does not exist'
+            _g_logger.error(err_msg)
             return
 
         # Remove connection from sidebar

@@ -89,7 +89,11 @@ class ConversationFrame(ttk.Frame):
         '''
         :param ident: ID to associate with new conversation
         '''
-        self.conversations[ident] = mf.MessageFrame(self, name)
+        if ident not in self.conversations:
+            self.conversations[ident] = mf.MessageFrame(self, name)
+        else:
+            # Do not blow over existing connection
+            _g_logger.debug('Conversation already exists')
 
     def activate_conversation(self, ident):
         '''
