@@ -106,6 +106,8 @@ def main():
     logger.debug('Broadcast Port: %d', broadcast_port)
     logger.info('Loaded configuration from %s', config_path)
 
+    c.Config.write()  # Write config to disk since it may have been modified
+
     # Initialize map for tracking connected devices - {GUID: (name, socket)}
     connection_map = sd.SyncedDict()
 

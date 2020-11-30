@@ -72,8 +72,12 @@ class Config(object):
                                     % (config_path))
 
         # Update configuration
-        with open(config_path, 'r') as json_file:
-            Config._config = json.load(json_file)
+        try:
+            with open(config_path, 'r') as json_file:
+                Config._config = json.load(json_file)
+        except json.JSONDecodeError:
+            # File contains invalid JSON
+            Config._config = {}
 
         # Update path to configuration
         Config._config_file_path = config_path
