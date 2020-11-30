@@ -36,8 +36,8 @@ def __process_disconnect_msg(message):
         except queue.Full:
             _g_logger.error("Unable to pass disconnect message to UI")
 
-    if mdst == dproto.DPMsgDst.DPMSG_DST_BACKEND:
-        # TODO Implement
+    elif mdst == dproto.DPMsgDst.DPMSG_DST_BACKEND:
+        # TODO Implement ability for user to disconnect manually
         _g_logger.error("Disconnect message had unimplemented destination")
 
     else:
