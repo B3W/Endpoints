@@ -18,8 +18,8 @@ def start(in_q):
 
     gui = appui.EndpointUI(root, in_q)
 
-    logger.info('Opening UI...')
+    logger.debug('Opening UI...')
 
     gui.mainloop()
 
-    logger.info('UI Closed')
+    logger.debug('UI Closed')
