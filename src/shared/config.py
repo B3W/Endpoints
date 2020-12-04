@@ -16,6 +16,7 @@ class ConfigEnum(enum.Enum):
     ENDPOINT_GUID = enum.auto()
     ENDPOINT_NAME = enum.auto()
     BROADCAST_PORT = enum.auto()
+    NEW_USER = enum.auto()
 
 
 # Dictionary for conversion between enum and JSON field name
@@ -24,7 +25,8 @@ KEY_MAP = {
     ConfigEnum.BYTE_ENCODING: 'byte_encoding',
     ConfigEnum.ENDPOINT_GUID: 'endpoint_guid',
     ConfigEnum.ENDPOINT_NAME: 'endpoint_name',
-    ConfigEnum.BROADCAST_PORT: 'udp_broadcast_port'
+    ConfigEnum.BROADCAST_PORT: 'udp_broadcast_port',
+    ConfigEnum.NEW_USER: 'new_user'
 }
 
 
