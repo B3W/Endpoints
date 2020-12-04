@@ -30,7 +30,7 @@ class MessageWidget(ttk.Frame):
         self.text = ResizableText(self,
                                   font=Fonts.get('MessageText'),
                                   relief=tk.FLAT,
-                                  wrap='word',
+                                  wrap=tk.WORD,
                                   highlightbackground="light grey",
                                   highlightthickness=2,
                                   height=1)
