@@ -4,6 +4,7 @@ import broadcast as bcast
 import broadcast_listener as bcastl
 import errno
 import gui
+import registrationframe as rf
 import inspect
 import logging
 import netid as nid
@@ -47,6 +48,16 @@ def main():
     # Construct configuration path and load configuration
     config_path = os.path.join(root_path, 'config.json')
     c.Config.load(config_path)
+
+    # Check if this if the first time running the application
+    try:
+        first_time_user = c.Config.get(c.ConfigEnum.NEW_USER)
+    except KeyError:
+        first_time_user = True
+
+    if first_time_user:
+        # Open window for registering user
+        rf.RegistrationFrame.show()
 
     # Construct host's byte encoding
     try:
