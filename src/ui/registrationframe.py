@@ -39,13 +39,15 @@ class RegistrationFrame(ttk.Frame):
         self.page_one = RegistrationPageOne(self, welcome_text_font)
         self.page_one.grid(column=0, row=0, sticky=tk.NSEW)
 
-        # style.configure('test.TFrame', background='blue')
-        # self.page_one.configure(style='test.TFrame')
-
         # Second page of welcome window
         self.page_two = RegistrationPageTwo(self)
         self.page_two.grid(column=0, row=0)
         self.page_two.grid_remove()
+
+        # Final page of the welcome window
+        self.final_page = RegistrationFinalPage(self, welcome_text_font)
+        self.final_page.grid(column=0, row=0)
+        self.final_page.grid_remove()
 
         self.current_page = self.page_one
 
@@ -80,20 +82,27 @@ class RegistrationFrame(ttk.Frame):
         elif self.current_page == self.page_two:
             # Collect users input and write it to the configuration
             user_input = self.page_two.username.get().strip()
-            c.Config.set(c.ConfigEnum.ENDPOINT_NAME, user_input)
 
-            # Set user as registered in config
-            c.Config.set(c.ConfigEnum.NEW_USER, True)
+            if len(user_input) > 0:
+                c.Config.set(c.ConfigEnum.ENDPOINT_NAME, user_input)
 
-            # Switch to the confirmation page
-            self.current_page.grid_remove()
-            # TODO
+                # Set user as registered in config
+                c.Config.set(c.ConfigEnum.NEW_USER, False)
+
+                # Switch to the confirmation page
+                self.current_page.grid_remove()
+                self.final_page.set_user(user_input)
+                self.final_page.grid()
+                self.current_page = self.final_page
+
+                # Change text of the 'next' button
+                self.next_btn.configure(text='Close')
 
         else:
-            pass
+            self.master.destroy()
 
     def __close(self, event=None):
-        if self.current_page == self.page_two:  # TODO CHANGE
+        if self.current_page == self.final_page:
             self.master.destroy()
 
     @staticmethod
@@ -127,8 +136,8 @@ class RegistrationPageOne(ttk.Frame):
         # Text containing welcome message
         welcome_msg_str = f'Thank you for using Endpoints v{__version__}!\n\n'\
                           'Endpoints is a simple chat app that allows you to' \
-                          ' message other devices connected to the same'      \
-                          ' subnet as you that are running Endpoints.\n\n'    \
+                          ' message other devices running Endpoints connected'\
+                          ' to the same subnet as you.\n\n'                   \
                           'Please follow the one-step setup to get started.'
 
         self.welcome_text = rt.ResizableText(self,
@@ -195,8 +204,32 @@ class RegistrationPageTwo(ttk.Frame):
 
 
 class RegistrationFinalPage(ttk.Frame):
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, master, font, *args, **kwargs):
         # Initialize the instance
         ttk.Frame.__init__(self, master, *args, **kwargs)
 
-        # TODO
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=0)
+        self.rowconfigure(1, weight=1)
+
+        # Label containing title message
+        self.complete_title = ttk.Label(self,
+                                        text='Registration Complete!',
+                                        style='WelcomeWindowTitle.TLabel')
+
+        self.complete_title.grid(column=0, row=0, pady=(5, 5), sticky=tk.EW)
+
+        # Text containing completion message
+        self.complete_text = rt.ResizableText(self,
+                                              relief=tk.FLAT,
+                                              wrap=tk.WORD,
+                                              bg='gray95',
+                                              font=font)
+
+        self.complete_text.grid(column=0, row=1, padx=(15, 15), sticky=tk.NSEW)
+
+    def set_user(self, username):
+        complete_msg_str = f'Enjoy Endpoints, {username}!'
+
+        self.complete_text.insert(tk.END, complete_msg_str)
+        self.complete_text.config(state=tk.DISABLED)
