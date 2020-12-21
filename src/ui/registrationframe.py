@@ -111,6 +111,10 @@ class RegistrationFrame(ttk.Frame):
         Shows the register user window and blocks until it is closed
         """
         root = tk.Tk()
+        icon = tk.PhotoImage(file='assets/Endpoints-Icon-3-16x16.png')
+        root.image = icon
+        root.iconphoto(True, icon)
+
         registration = RegistrationFrame(root)
         registration.pack(fill=tk.BOTH, expand=True)
 
